@@ -18,6 +18,7 @@ import {
   LogOut 
 } from 'lucide-react-native';
 import { COLORS } from '../theme/colors';
+import { useAuthStore } from '../store/useAuthStore';
 
 const QUALITIES = [
   { id: '1', name: 'Premium Silk', icon: Diamond },
@@ -28,6 +29,8 @@ const QUALITIES = [
 ];
 
 const QualityScreen = ({ navigation }) => {
+  const logout = useAuthStore((state) => state.logout);
+
   const renderCard = (item) => {
     const IconComponent = item.icon;
     return (
@@ -46,7 +49,7 @@ const QualityScreen = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>COLLECTIONS</Text>
-        <TouchableOpacity onPress={() => navigation.replace('Auth')}>
+        <TouchableOpacity onPress={() => logout()}>
           <LogOut size={22} color={COLORS.primary} />
         </TouchableOpacity>
       </View>

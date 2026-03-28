@@ -10,18 +10,28 @@ import {
   Modal,
   Platform,
   StatusBar,
-  Image
+  Alert,
+  ActivityIndicator
 } from 'react-native';
-import { ChevronLeft, CheckCircle2, ShieldCheck, Wallet, SmartphoneNfc } from 'lucide-react-native';
+import { 
+  ChevronLeft, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Wallet, 
+  SmartphoneNfc 
+} from 'lucide-react-native';
 import { COLORS } from '../theme/colors';
 import { useCartStore } from '../store/useCartStore';
+import api from '../utils/api';
 
 const UNIT_PRICE = 45;
 
 const ConfirmOrderScreen = ({ navigation }) => {
   const { cart } = useCartStore();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('jazzcash');
+  const [accountNumber, setAccountNumber] = useState('');
 
   const orderSummary = [];
   let totalItems = 0;
@@ -37,8 +47,25 @@ const ConfirmOrderScreen = ({ navigation }) => {
 
   const subtotal = totalItems * UNIT_PRICE;
 
-  const handlePayment = () => {
-    setIsSuccess(true);
+  const handlePayment = async () => {
+    if (!accountNumber) {
+      return Alert.alert("Required", "Please enter your mobile account number");
+    }
+
+    setLoading(true);
+    try {
+      await api.post('/orders/place', {
+        cartItems: orderSummary,
+        totalAmount: subtotal,
+        paymentMethod: paymentMethod,
+        accountNumber: accountNumber
+      });
+      setIsSuccess(true);
+    } catch (err) {
+      Alert.alert("Error", err.response?.data?.msg || "Could not connect to server");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const PaymentOption = ({ id, label, icon: Icon }) => (
@@ -112,19 +139,29 @@ const ConfirmOrderScreen = ({ navigation }) => {
               placeholderTextColor={COLORS.textSecondary}
               style={styles.phoneNumberInput}
               keyboardType="numeric"
+              value={accountNumber}
+              onChangeText={setAccountNumber}
             />
           </View>
         </View>
 
         <View style={styles.securityNote}>
           <ShieldCheck color={COLORS.primary} size={16} />
-          <Text style={styles.securityText}>Secure Encrypted Payment</Text>
+          <Text style={styles.securityText}>Secure 256-bit SSL Encrypted Payment</Text>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
-          <Text style={styles.payButtonText}>PLACE ORDER - Rs {subtotal}</Text>
+        <TouchableOpacity 
+          style={[styles.payButton, loading && { opacity: 0.7 }]} 
+          onPress={handlePayment}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color={COLORS.secondary} />
+          ) : (
+            <Text style={styles.payButtonText}>PLACE ORDER - Rs {subtotal}</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -165,7 +202,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
   scrollContent: { padding: 25 },
-  section: { marginBottom: 30 },
+  section: { marginBottom: 35 },
   sectionTitle: { color: COLORS.primary, fontSize: 13, fontWeight: 'bold', letterSpacing: 1.5, marginBottom: 15 },
   divider: { height: 1, backgroundColor: '#222', marginBottom: 20 },
   orderItem: { 
@@ -185,11 +222,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     marginTop: 10, 
     paddingTop: 20,
-    paddingHorizontal: 5
+    paddingHorizontal: 5,
+    borderTopWidth: 1,
+    borderTopColor: '#222'
   },
   totalLabel: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold' },
   totalValue: { color: COLORS.primary, fontSize: 24, fontWeight: 'bold' },
-  
   paymentGrid: { gap: 12, marginBottom: 20 },
   paymentCard: {
     flexDirection: 'row',
@@ -226,7 +264,6 @@ const styles = StyleSheet.create({
   },
   radioCircleSelected: { borderColor: COLORS.primary },
   radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.primary },
-  
   inputSection: { marginTop: 10 },
   inputLabel: { color: COLORS.textSecondary, fontSize: 12, marginBottom: 8, marginLeft: 5 },
   phoneNumberInput: {
@@ -238,10 +275,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#222'
   },
-
-  securityNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20, opacity: 0.6 },
+  securityNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 30, opacity: 0.6 },
   securityText: { color: COLORS.textSecondary, fontSize: 12 },
-  
   footer: { padding: 25, backgroundColor: COLORS.background },
   payButton: { 
     backgroundColor: COLORS.primary, 
@@ -252,10 +287,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
-    elevation: 8
+    elevation: 8,
+    height: 65,
+    justifyContent: 'center'
   },
   payButtonText: { color: COLORS.secondary, fontWeight: 'bold', fontSize: 16, letterSpacing: 1 },
-
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
   successCard: { width: '85%', backgroundColor: COLORS.surface, borderRadius: 30, padding: 40, alignItems: 'center' },
   successTitle: { color: COLORS.textPrimary, fontSize: 24, fontWeight: 'bold', marginTop: 20 },
