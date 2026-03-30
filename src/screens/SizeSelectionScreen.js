@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   collarImage: { width: '100%', height: '100%' },
   imageOverlay: { 
     ...StyleSheet.absoluteFillObject, 
-    backgroundColor: 'rgba(0,0,0,0.5)' 
+    backgroundColor: 'rgba(255,255,255,0.7)' 
   },
   list: {
     flex: 1,
@@ -171,17 +171,17 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1A1A1A'
+    borderBottomColor: '#E0E0E0'
   },
   sizeLabel: { color: COLORS.textPrimary, fontSize: 17, fontWeight: '600' },
   controlsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#151515',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     paddingLeft: 10,
     borderWidth: 1,
-    borderColor: '#222'
+    borderColor: '#E0E0E0'
   },
   quantityInput: {
     fontSize: 18,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   arrowStack: {
     borderLeftWidth: 1,
-    borderLeftColor: '#222',
+    borderLeftColor: '#E0E0E0',
     paddingHorizontal: 5,
   },
   arrowButton: {

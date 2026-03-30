@@ -7,39 +7,39 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
-  Platform
+  Platform,
+  Image
 } from 'react-native';
 import { 
-  Diamond, 
-  Crown, 
-  ShieldCheck, 
-  Sparkles, 
-  Award, 
   LogOut 
 } from 'lucide-react-native';
 import { COLORS } from '../theme/colors';
 import { useAuthStore } from '../store/useAuthStore';
 
+const ANARKALI = require('../../assets/images/anarkali.jpg');
+const ANGLE = require('../../assets/images/angle.jpg');
+const PAK = require('../../assets/images/pak.jpg');
+const MADINA_COLLAR = require('../../assets/images/madina-collar.jpg');
+
 const QUALITIES = [
-  { id: '1', name: 'Premium Silk', icon: Diamond },
-  { id: '2', name: 'Royal Cotton', icon: Crown },
-  { id: '3', name: 'Elite Blend', icon: ShieldCheck },
-  { id: '4', name: 'Signature', icon: Sparkles },
-  { id: '5', name: 'Masterpiece', icon: Award },
+  { id: '1', name: 'Anarkali', image: ANARKALI },
+  { id: '2', name: 'Angle', image: ANGLE },
+  { id: '3', name: 'Pakistani', image: PAK },
+  { id: '4', name: 'Madina Collar', image: MADINA_COLLAR },
+  { id: '5', name: 'Anarkali Special', image: ANARKALI }, // Repeated logo
 ];
 
 const QualityScreen = ({ navigation }) => {
   const logout = useAuthStore((state) => state.logout);
 
   const renderCard = (item) => {
-    const IconComponent = item.icon;
     return (
       <TouchableOpacity
         key={item.id}
         style={styles.card}
         onPress={() => navigation.navigate('SizeSelection', { quality: item.name })}
       >
-        <IconComponent size={42} color={COLORS.primary} strokeWidth={1.5} />
+        <Image source={item.image} style={styles.cardImage} resizeMode="contain" />
         <Text style={styles.cardText}>{item.name}</Text>
       </TouchableOpacity>
     );
@@ -126,11 +126,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 5,
     borderWidth: 1,
-    borderColor: '#1A1A1A',
+    borderColor: '#E0E0E0',
+  },
+  cardImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 16,
   },
   cardText: {
     color: COLORS.textPrimary,
-    marginTop: 18,
+    marginTop: 12,
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',

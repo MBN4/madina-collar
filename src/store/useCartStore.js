@@ -6,7 +6,7 @@ export const useCartStore = create((set, get) => ({
     set((state) => {
       const currentQualityCart = state.cart[quality] || {};
       const currentQty = currentQualityCart[size] || 0;
-      const newQty = Math.max(0, currentQty + delta);
+      const newQty = Math.min(100, Math.max(0, currentQty + delta));
       return {
         cart: {
           ...state.cart,
