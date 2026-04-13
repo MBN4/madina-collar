@@ -22,11 +22,11 @@ const PAK = require('../../assets/images/pak.jpg');
 const MADINA_COLLAR = require('../../assets/images/madina-collar.jpg');
 
 const QUALITIES = [
-  { id: '1', name: 'Anarkali', image: ANARKALI },
-  { id: '2', name: 'Angle', image: ANGLE },
-  { id: '3', name: 'Pakistani', image: PAK },
-  { id: '4', name: 'Madina Collar', image: MADINA_COLLAR },
-  { id: '5', name: 'Anarkali Special', image: ANARKALI }, // Repeated logo
+  { id: '1', name: 'Madina Collar', image: MADINA_COLLAR },
+  { id: '2', name: 'New Madina Collar', image: MADINA_COLLAR },
+  { id: '3', name: 'Anarkali', image: ANARKALI },
+  { id: '4', name: 'Angle', image: ANGLE },
+  { id: '5', name: 'Pakistani', image: PAK },
 ];
 
 const QualityScreen = ({ navigation }) => {
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.background,
     width: '46%',
     aspectRatio: 0.9,
     borderRadius: 24,

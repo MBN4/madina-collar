@@ -65,6 +65,7 @@ const AuthScreen = () => {
     try {
       if (signupStep === 1) {
         if (!username || !phone) return Alert.alert("Error", "Please enter all details");
+        if (phone.length !== 11) return Alert.alert("Error", "Phone number must be exactly 11 digits");
         await api.post('/auth/register/step1', { username, phone });
         setSignupStep(2);
         setTimer(60);
@@ -90,6 +91,7 @@ const AuthScreen = () => {
 
   const handleLogin = async () => {
     if (!phone || !password) return Alert.alert("Error", "All fields are required");
+    if (phone.length !== 11) return Alert.alert("Error", "Phone number must be exactly 11 digits");
     try {
       const res = await api.post('/auth/login', { phone, password });
       await setAuth(res.data.user, res.data.token);
@@ -109,7 +111,7 @@ const AuthScreen = () => {
           <View style={styles.form}>
             {isLogin ? (
               <>
-                <TextInput placeholder="Phone Number" placeholderTextColor={COLORS.textSecondary} keyboardType="phone-pad" style={styles.input} value={phone} onChangeText={setPhone} />
+                <TextInput placeholder="Phone Number (e.g. 03XXXXXXXXX)" placeholderTextColor={COLORS.textSecondary} keyboardType="phone-pad" maxLength={11} style={styles.input} value={phone} onChangeText={setPhone} />
                 <PasswordInput placeholder="Password" value={password} onChangeText={setPassword} />
                 <TouchableOpacity style={styles.mainButton} onPress={handleLogin}><Text style={styles.buttonText}>SIGN IN</Text></TouchableOpacity>
               </>
@@ -118,7 +120,7 @@ const AuthScreen = () => {
                 {signupStep === 1 && (
                   <>
                     <TextInput placeholder="Username" placeholderTextColor={COLORS.textSecondary} style={styles.input} value={username} onChangeText={setUsername} />
-                    <TextInput placeholder="Phone Number" placeholderTextColor={COLORS.textSecondary} keyboardType="phone-pad" style={styles.input} value={phone} onChangeText={setPhone} />
+                    <TextInput placeholder="Phone Number (03XXXXXXXXX)" placeholderTextColor={COLORS.textSecondary} keyboardType="phone-pad" maxLength={11} style={styles.input} value={phone} onChangeText={setPhone} />
                   </>
                 )}
                 {signupStep === 2 && (

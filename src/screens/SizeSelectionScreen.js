@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -21,16 +21,24 @@ const UNIT_PRICE = 45;
 const SizeSelectionScreen = ({ route, navigation }) => {
   const { quality } = route.params;
   const { cart, updateQuantity, getTotalItems } = useCartStore();
+  const [selectedType, setSelectedType] = useState(null);
   
-  const currentQualityCart = cart[quality] || {};
+  const cartKey = selectedType ? `${quality} - ${selectedType}` : quality;
+  const currentQualityCart = cart[cartKey] || {};
   const totalInCart = getTotalItems();
   const totalPrice = totalInCart * UNIT_PRICE;
+
+  const types = [
+    { id: 'collar', name: 'Collar', icon: 'Shirt' },
+    { id: 'bain', name: 'Bain', icon: 'User' },
+    { id: 'roll_patti', name: 'Roll Patti', icon: 'Layers' },
+  ];
 
   const handleManualInput = (size, text) => {
     const newVal = parseInt(text.replace(/[^0-9]/g, '')) || 0;
     const currentQty = currentQualityCart[size] || 0;
     const delta = newVal - currentQty;
-    updateQuantity(quality, size, delta);
+    updateQuantity(cartKey, size, delta);
   };
 
   const renderSizeItem = ({ item: size }) => {
@@ -53,14 +61,14 @@ const SizeSelectionScreen = ({ route, navigation }) => {
           
           <View style={styles.arrowStack}>
             <TouchableOpacity 
-              onPress={() => updateQuantity(quality, size, 1)}
+              onPress={() => updateQuantity(cartKey, size, 1)}
               style={styles.arrowButton}
             >
               <ChevronUp size={18} color={COLORS.primary} strokeWidth={3} />
             </TouchableOpacity>
             
             <TouchableOpacity 
-              onPress={() => updateQuantity(quality, size, -1)}
+              onPress={() => updateQuantity(cartKey, size, -1)}
               style={styles.arrowButton}
             >
               <ChevronDown size={18} color={COLORS.primary} strokeWidth={3} />
@@ -78,7 +86,9 @@ const SizeSelectionScreen = ({ route, navigation }) => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <ChevronLeft color={COLORS.textPrimary} size={28} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{quality}</Text>
+          <Text style={styles.headerTitle}>
+            {selectedType ? `${quality} - ${selectedType}` : quality}
+          </Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -91,15 +101,47 @@ const SizeSelectionScreen = ({ route, navigation }) => {
           <View style={styles.imageOverlay} />
         </View>
 
-        <FlatList
-          data={SIZES}
-          keyExtractor={(item) => item}
-          renderItem={renderSizeItem}
-          contentContainerStyle={styles.listPadding}
-          showsVerticalScrollIndicator={Platform.OS === 'web'}
-          style={styles.list}
-          removeClippedSubviews={false}
-        />
+        {!selectedType ? (
+          <View style={styles.selectionGrid}>
+            <Text style={styles.selectionTitle}>Choose Design Style</Text>
+            <View style={styles.typeCardsContainer}>
+              {types.map((type) => (
+                <TouchableOpacity
+                  key={type.id}
+                  style={styles.typeCard}
+                  onPress={() => setSelectedType(type.name)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.typeIconPlaceholder}>
+                    <Text style={styles.typeInitial}>{type.name.charAt(0)}</Text>
+                  </View>
+                  <Text style={styles.typeText}>{type.name}</Text>
+                  <View style={styles.chevronPlaceholder}>
+                    <ChevronUp size={20} color="#E0E0E0" style={{ transform: [{ rotate: '90deg' }] }} />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ) : (
+          <FlatList
+            data={SIZES}
+            keyExtractor={(item) => item}
+            renderItem={renderSizeItem}
+            contentContainerStyle={styles.listPadding}
+            showsVerticalScrollIndicator={Platform.OS === 'web'}
+            style={styles.list}
+            removeClippedSubviews={false}
+            ListHeaderComponent={() => (
+              <TouchableOpacity 
+                style={styles.changeTypeButton} 
+                onPress={() => setSelectedType(null)}
+              >
+                <Text style={styles.changeTypeText}>← Change Selection ({selectedType})</Text>
+              </TouchableOpacity>
+            )}
+          />
+        )}
 
         <View style={styles.footer}>
           <View>
@@ -229,7 +271,75 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center'
   },
-  confirmButtonText: { color: COLORS.secondary, fontWeight: '900', letterSpacing: 1 }
+  confirmButtonText: { color: COLORS.secondary, fontWeight: '900', letterSpacing: 1 },
+  selectionGrid: {
+    padding: 20,
+    flex: 1,
+  },
+  selectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  typeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  typeCardsContainer: {
+    paddingTop: 10,
+  },
+  chevronPlaceholder: {
+    marginLeft: 'auto',
+  },
+  typeIconPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#FFF9EF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 20,
+  },
+  typeInitial: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+  typeText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    letterSpacing: 0.3,
+  },
+  changeTypeButton: {
+    backgroundColor: '#F8F9FA',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+  },
+  changeTypeText: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
 });
 
 export default SizeSelectionScreen;

@@ -23,7 +23,7 @@ export default function AppNavigator() {
       <Stack.Navigator 
         screenOptions={{ 
           headerShown: false,
-          cardStyle: { backgroundColor: '#0F0F0F' } 
+          cardStyle: { backgroundColor: '#FFFFFF' } 
         }}
       >
         {!isAuthenticated ? (

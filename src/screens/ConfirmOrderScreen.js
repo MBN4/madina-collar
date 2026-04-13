@@ -11,7 +11,10 @@ import {
   Platform,
   StatusBar,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard
 } from 'react-native';
 import { 
   ChevronLeft, 
@@ -33,24 +36,31 @@ const ConfirmOrderScreen = ({ navigation }) => {
   const [expandedQualities, setExpandedQualities] = useState({});
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('jazzcash');
   const [accountNumber, setAccountNumber] = useState('');
 
   const groupedCart = {};
   const flatOrderSummary = [];
   let totalItems = 0;
 
-  Object.entries(cart).forEach(([quality, sizes]) => {
+  Object.entries(cart).forEach(([cartKey, sizes]) => {
+    // Split "Quality - Type" or just "Quality"
+    const parts = cartKey.split(' - ');
+    const qualityBase = parts[0];
+    const itemType = parts[1] || 'Standard';
+
     const activeSizes = Object.entries(sizes)
       .filter(([_, qty]) => qty > 0)
       .map(([size, qty]) => {
         totalItems += qty;
-        flatOrderSummary.push({ quality, size, qty });
-        return { size, qty };
+        flatOrderSummary.push({ quality: qualityBase, type: itemType, size, qty });
+        return { type: itemType, size, qty };
       });
     
     if (activeSizes.length > 0) {
-      groupedCart[quality] = activeSizes;
+      if (!groupedCart[qualityBase]) {
+        groupedCart[qualityBase] = [];
+      }
+      groupedCart[qualityBase].push(...activeSizes);
     }
   });
 
@@ -64,8 +74,8 @@ const ConfirmOrderScreen = ({ navigation }) => {
   };
 
   const handlePayment = async () => {
-    if (!accountNumber) {
-      return Alert.alert("Required", "Please enter your mobile account number");
+    if (!accountNumber || accountNumber.length !== 11) {
+      return Alert.alert("Invalid Number", "Please enter a valid 11-digit phone number (e.g. 03XXXXXXXXX)");
     }
 
     setLoading(true);
@@ -73,7 +83,7 @@ const ConfirmOrderScreen = ({ navigation }) => {
       await api.post('/orders/place', {
         cartItems: flatOrderSummary,
         totalAmount: subtotal,
-        paymentMethod: paymentMethod,
+        paymentMethod: 'phone_contact',
         accountNumber: accountNumber
       });
       setIsSuccess(true);
@@ -84,29 +94,7 @@ const ConfirmOrderScreen = ({ navigation }) => {
     }
   };
 
-  const PaymentOption = ({ id, label, icon: Icon }) => (
-    <TouchableOpacity 
-      style={[
-        styles.paymentCard, 
-        paymentMethod === id && styles.paymentCardSelected
-      ]} 
-      onPress={() => setPaymentMethod(id)}
-    >
-      <View style={styles.paymentIconContainer}>
-        <Icon color={paymentMethod === id ? COLORS.secondary : COLORS.primary} size={24} />
-      </View>
-      <Text style={[
-        styles.paymentLabel, 
-        paymentMethod === id && styles.paymentLabelSelected
-      ]}>{label}</Text>
-      <View style={[
-        styles.radioCircle, 
-        paymentMethod === id && styles.radioCircleSelected
-      ]}>
-        {paymentMethod === id && <View style={styles.radioInner} />}
-      </View>
-    </TouchableOpacity>
-  );
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -118,90 +106,98 @@ const ConfirmOrderScreen = ({ navigation }) => {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ORDER SUMMARY</Text>
-          <View style={styles.divider} />
-          
-          {Object.entries(groupedCart).map(([quality, items], index) => {
-            const isExpanded = expandedQualities[quality];
-            const qualityTotal = items.reduce((sum, item) => sum + item.qty, 0);
-            
-            return (
-              <View key={quality} style={styles.qualityGroup}>
-                <TouchableOpacity 
-                  style={styles.qualityHeader}
-                  onPress={() => toggleQuality(quality)}
-                  activeOpacity={0.7}
-                >
-                  <View>
-                    <Text style={styles.itemQuality}>{quality}</Text>
-                    <Text style={styles.itemSizeSummary}>{qualityTotal} Items Selected</Text>
-                  </View>
-                  <View style={styles.headerRight}>
-                    <Text style={styles.itemPrice}>Rs {qualityTotal * UNIT_PRICE}</Text>
-                    {isExpanded ? 
-                      <ChevronUp color={COLORS.primary} size={20} /> : 
-                      <ChevronDown color={COLORS.primary} size={20} />
-                    }
-                  </View>
-                </TouchableOpacity>
-
-                {isExpanded && (
-                  <View style={styles.expandedContent}>
-                    {items.map((item, idx) => (
-                      <View key={idx} style={styles.sizeBreakdown}>
-                        <Text style={styles.breakdownText}>Size {item.size} x {item.qty}</Text>
-                        <Text style={styles.breakdownPrice}>Rs {item.qty * UNIT_PRICE}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            );
-          })}
-          
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>Rs {subtotal}</Text>
-          </View>
-
-          <TouchableOpacity 
-            style={styles.addMoreButton}
-            onPress={() => navigation.navigate('Quality')}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.addMoreText}>+ ADD MORE ITEMS</Text>
-          </TouchableOpacity>
-        </View>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>ORDER SUMMARY</Text>
+              <View style={styles.divider} />
+              
+              {Object.entries(groupedCart).map(([quality, items], index) => {
+                const isExpanded = expandedQualities[quality];
+                const qualityTotal = items.reduce((sum, item) => sum + item.qty, 0);
+                
+                return (
+                  <View key={quality} style={styles.qualityGroup}>
+                    <TouchableOpacity 
+                      style={styles.qualityHeader}
+                      onPress={() => toggleQuality(quality)}
+                      activeOpacity={0.7}
+                    >
+                      <View>
+                        <Text style={styles.itemQuality}>{quality}</Text>
+                        <Text style={styles.itemSizeSummary}>{qualityTotal} Items Selected</Text>
+                      </View>
+                      <View style={styles.headerRight}>
+                        <Text style={styles.itemPrice}>Rs {qualityTotal * UNIT_PRICE}</Text>
+                        {isExpanded ? 
+                          <ChevronUp color={COLORS.primary} size={20} /> : 
+                          <ChevronDown color={COLORS.primary} size={20} />
+                        }
+                      </View>
+                    </TouchableOpacity>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PAYMENT DETAILS</Text>
-          <View style={styles.paymentGrid}>
-            <PaymentOption id="jazzcash" label="JazzCash" icon={SmartphoneNfc} />
-            <PaymentOption id="easypaisa" label="EasyPaisa" icon={Wallet} />
-          </View>
+                    {isExpanded && (
+                      <View style={styles.expandedContent}>
+                        {items.map((item, idx) => (
+                          <View key={idx} style={styles.sizeBreakdown}>
+                            <Text style={styles.breakdownText}>{item.type} - Size {item.size} x {item.qty}</Text>
+                            <Text style={styles.breakdownPrice}>Rs {item.qty * UNIT_PRICE}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+              
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total Amount</Text>
+                <Text style={styles.totalValue}>Rs {subtotal}</Text>
+              </View>
 
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Account Number</Text>
-            <TextInput 
-              placeholder="03xx xxxxxxx" 
-              placeholderTextColor={COLORS.textSecondary}
-              style={styles.phoneNumberInput}
-              keyboardType="numeric"
-              value={accountNumber}
-              onChangeText={setAccountNumber}
-            />
-          </View>
-        </View>
+              <TouchableOpacity 
+                style={styles.addMoreButton}
+                onPress={() => navigation.navigate('Quality')}
+              >
+                <Text style={styles.addMoreText}>+ ADD MORE ITEMS</Text>
+              </TouchableOpacity>
+            </View>
 
-        <View style={styles.securityNote}>
-          <ShieldCheck color={COLORS.primary} size={16} />
-          <Text style={styles.securityText}>Secure 256-bit SSL Encrypted Payment</Text>
-        </View>
-      </ScrollView>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>CONTACT DETAILS</Text>
+              <View style={styles.divider} />
+              
+              <View style={styles.inputSection}>
+                <Text style={styles.inputLabel}>Mobile Number</Text>
+                <TextInput 
+                  placeholder="03XXXXXXXXX" 
+                  placeholderTextColor={COLORS.textSecondary}
+                  style={styles.phoneNumberInput}
+                  keyboardType="numeric"
+                  maxLength={11}
+                  value={accountNumber}
+                  onChangeText={setAccountNumber}
+                  returnKeyType="done"
+                  onSubmitEditing={Keyboard.dismiss}
+                />
+                <Text style={styles.helperText}>Admin will contact you on this number to confirm the order.</Text>
+              </View>
+            </View>
+
+            <View style={styles.securityNote}>
+              <ShieldCheck color={COLORS.primary} size={16} />
+              <Text style={styles.securityText}>100% Secure & Hand-Delivered</Text>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
 
       <View style={styles.footer}>
         <TouchableOpacity 
@@ -222,7 +218,7 @@ const ConfirmOrderScreen = ({ navigation }) => {
           <View style={styles.successCard}>
             <CheckCircle2 color={COLORS.primary} size={80} />
             <Text style={styles.successTitle}>Order Confirmed</Text>
-            <Text style={styles.successSubtitle}>Your premium selection is being prepared.</Text>
+            <Text style={styles.successSubtitle}>Our admin will call you shortly to confirm your order.</Text>
             <TouchableOpacity 
               style={styles.closeButton}
               onPress={() => {
@@ -373,6 +369,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0'
   },
+  helperText: { color: COLORS.textSecondary, fontSize: 13, marginTop: 10, lineHeight: 18, fontStyle: 'italic' },
   securityNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 30, opacity: 0.6 },
   securityText: { color: COLORS.textSecondary, fontSize: 12 },
   footer: { padding: 25, backgroundColor: COLORS.background },
