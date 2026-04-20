@@ -11,6 +11,7 @@ import {
   Platform,
   StatusBar,
   ScrollView,
+  Alert
 } from 'react-native';
 import Animated, { FadeInDown, FadeInRight, Layout, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -190,8 +191,11 @@ const SizeSelectionScreen = ({ route, navigation }) => {
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
       <StatusBar barStyle="dark-content" />
-      <LinearGradient colors={currentTheme.gradient} style={{ height: 210 }}>
-        <View style={[styles.navHeader, { paddingTop: 95 }]}>
+      <LinearGradient colors={currentTheme.gradient} style={{ height: 240 }}>
+        <View style={styles.logoHeader}>
+           <Image source={require('../../assets/images/madina-collar-round.png')} style={styles.headerLogo} resizeMode="contain" />
+        </View>
+        <View style={[styles.navHeader, { marginTop: -80, paddingBottom: 10 }]}>
           <TouchableOpacity 
             onPress={() => {
               if (selectedType) setSelectedType(null);
@@ -203,10 +207,6 @@ const SizeSelectionScreen = ({ route, navigation }) => {
               <ChevronLeft color={COLORS.textPrimary} size={24} />
             </View>
           </TouchableOpacity>
-          <View style={{ flex: 1, marginLeft: 15 }}>
-            <Text style={[styles.headerTitle, { color: '#000' }]}>{selectedType ? `${selectedType}` : "Select Style"}</Text>
-            <Text style={[styles.qualitySubheader, { color: currentTheme.accent }]}>{quality}</Text>
-          </View>
         </View>
       </LinearGradient>
 
@@ -215,13 +215,25 @@ const SizeSelectionScreen = ({ route, navigation }) => {
           <View style={styles.selectionGrid}>
             <Text style={styles.selectionTitle}>Choose Design Style</Text>
             {types.map((type, index) => (
-              <Animated.View key={type.id} entering={FadeInDown.delay(index * 150)}>
-                <TouchableOpacity style={styles.typeCard} onPress={() => setSelectedType(type.name)}>
+              <Animated.View 
+                key={type.id} 
+                entering={FadeInDown.delay(index * 150).springify()}
+              >
+                <TouchableOpacity 
+                  activeOpacity={0.8}
+                  style={styles.typeCard} 
+                  onPress={() => setSelectedType(type.name)}
+                >
                   <View style={styles.typeIconPlaceholder}>
                     {type.icon}
                   </View>
-                  <Text style={styles.typeText}>{type.name}</Text>
-                  <ChevronRight size={20} color={currentTheme.primary} />
+                  <View style={{ flex: 1 }}>
+                     <Text style={styles.typeText}>{type.name}</Text>
+                     <Text style={styles.typeSubText}>Browse {type.name} collection</Text>
+                  </View>
+                  <View style={[styles.arrowCircle, { backgroundColor: currentTheme.primary + '20' }]}>
+                    <ChevronRight size={18} color={currentTheme.primary} strokeWidth={3} />
+                  </View>
                 </TouchableOpacity>
               </Animated.View>
             ))}
@@ -280,7 +292,8 @@ const SizeSelectionScreen = ({ route, navigation }) => {
               )}
             </View>
 
-            <FlatList
+            <Animated.FlatList
+              entering={FadeInDown}
               data={activeSizes}
               keyExtractor={(item) => item}
               renderItem={renderSizeItem}
@@ -301,8 +314,11 @@ const SizeSelectionScreen = ({ route, navigation }) => {
                 <Animated.View entering={FadeInDown.delay(idx * 30)} key={`${item.key}-${item.size}`} style={styles.summaryItem}>
                   <View style={[styles.miniColorDot, { backgroundColor: item.colorHex, marginRight: 10 }]} />
                   <Text style={styles.summaryText}>{item.category} • {item.size} • {item.colorLabel} {item.width ? `• W: ${item.width}` : ''}</Text>
-                  <Text style={[styles.summaryQty, { color: currentTheme.primary }]}>{item.qty} pcs</Text>
-                  <TouchableOpacity onPress={() => removeItem(item.key, item.size)}><Trash2 size={18} color={COLORS.error} /></TouchableOpacity>
+                  <View style={{ alignItems: 'flex-end', marginRight: 15 }}>
+                    <Text style={[styles.summaryQty, { color: currentTheme.primary }]}>{item.qty} pcs</Text>
+                    <Text style={styles.summaryItemPrice}>Rs {item.qty * UNIT_PRICE}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => removeItem(item.key, item.size)} style={styles.removeButton}><Trash2 size={16} color={COLORS.error} /></TouchableOpacity>
                 </Animated.View>
               ))}
             </ScrollView>
@@ -311,12 +327,27 @@ const SizeSelectionScreen = ({ route, navigation }) => {
 
         <View style={styles.footer}>
           <TouchableOpacity onPress={() => totalInCart > 0 && setShowSummary(!showSummary)} style={styles.footerInfo}>
-            <Text style={styles.footerLabel}>{totalInCart} Pieces {totalInCart > 0 && <ChevronUpIcon size={14} color={currentTheme.primary} />}</Text>
+             <View style={styles.totalBadge}>
+                <ShoppingBag size={12} color={currentTheme.primary} />
+                <Text style={[styles.totalBadgeText, { color: currentTheme.primary }]}>{totalInCart} items</Text>
+             </View>
             <Text style={styles.footerValue}>Rs {totalPrice}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.confirmButton, { backgroundColor: currentTheme.primary, shadowColor: currentTheme.primary }]} onPress={() => navigation.navigate('ConfirmOrder')}>
-            <ShoppingBag size={20} color="#FFF" style={{ marginRight: 10 }} />
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            style={[styles.confirmButton, { backgroundColor: currentTheme.primary, shadowColor: currentTheme.primary }]} 
+            onPress={() => {
+              if (totalInCart === 0) {
+                Alert.alert("Empty Selection", "Please add at least one item before proceeding.");
+              } else {
+                navigation.navigate('ConfirmOrder');
+              }
+            }}
+          >
             <Text style={styles.confirmButtonText}>PROCEED</Text>
+            <View style={styles.confirmIconBox}>
+               <ChevronRight size={20} color={currentTheme.primary} />
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -325,51 +356,56 @@ const SizeSelectionScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: COLORS.background, borderTopLeftRadius: 30, borderTopRightRadius: 30, marginTop: -30 },
-  navHeader: { paddingHorizontal: 20, paddingTop: 20 },
-  iconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.8)', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '900', marginTop: 10 },
-  qualitySubheader: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-  optionsHeader: { paddingHorizontal: 20, paddingTop: 20, backgroundColor: COLORS.background },
-  selectorSection: { marginBottom: 15 },
-  selectorLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
-  categoryTab: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, marginRight: 10, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: '#E0E0E0' },
-  activeCategoryTab: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  categoryTabText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  mainContainer: { flex: 1, backgroundColor: COLORS.background, borderTopLeftRadius: 35, borderTopRightRadius: 35, marginTop: -35 },
+  logoHeader: { alignItems: 'center', paddingTop: 60, height: 140 },
+  headerLogo: { width: 80, height: 80 },
+  navHeader: { paddingHorizontal: 25, flexDirection: 'row', alignItems: 'center' },
+  iconCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5 },
+  headerTitle: { color: COLORS.textPrimary, fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
+  qualitySubheader: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 2 },
+  optionsHeader: { paddingHorizontal: 20, paddingTop: 25, backgroundColor: COLORS.background },
+  selectorSection: { marginBottom: 20 },
+  selectorLabel: { fontSize: 12, fontWeight: '900', color: COLORS.textSecondary, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1.5 },
+  categoryTab: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 25, marginRight: 12, backgroundColor: COLORS.surface, borderWidth: 1.5, borderColor: '#F0F0F0' },
+  categoryTabText: { fontSize: 13, fontWeight: '800', color: COLORS.textSecondary },
   activeCategoryTabText: { color: '#FFF' },
-  colorChip: { width: 40, height: 40, borderRadius: 20, marginRight: 15, borderWidth: 1, borderColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center' },
-  activeChip: { borderColor: COLORS.primary, borderWidth: 2 },
-  dotIndicator: { position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary, borderWidth: 1, borderColor: '#FFF' },
-  widthChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: COLORS.surface, marginRight: 10, borderWidth: 1, borderColor: '#E0E0E0' },
-  activeWidthChip: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  widthText: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+  colorChip: { width: 44, height: 44, borderRadius: 22, marginRight: 15, borderWidth: 2, borderColor: '#F0F0F0', justifyContent: 'center', alignItems: 'center', elevation: 2 },
+  dotIndicator: { position: 'absolute', top: -4, right: -4, width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.primary, borderWidth: 2, borderColor: '#FFF' },
+  widthChip: { paddingHorizontal: 18, paddingVertical: 12, borderRadius: 15, backgroundColor: COLORS.surface, marginRight: 12, borderWidth: 1.5, borderColor: '#F0F0F0' },
+  widthText: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
   activeWidthText: { color: '#FFF' },
-  listPadding: { paddingHorizontal: 20, paddingBottom: 180 },
-  sizeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' },
-  sizeLabel: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '800' },
-  miniColorList: { flexDirection: 'row', marginTop: 6 },
-  miniColorDot: { width: 12, height: 12, borderRadius: 6, marginRight: 4, borderWidth: 0.5, borderColor: '#DDD' },
-  controlsContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 12, paddingLeft: 10, borderWidth: 1, borderColor: '#E0E0E0' },
-  quantityInput: { fontSize: 18, fontWeight: '900', width: 50, textAlign: 'center', paddingVertical: 10 },
-  arrowStack: { borderLeftWidth: 1, borderLeftColor: '#E0E0E0', paddingHorizontal: 6 },
-  summaryTray: { position: 'absolute', bottom: 100, left: 0, right: 0, backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, elevation: 30, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 20, zIndex: 100 },
-  trayHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  trayTitle: { fontSize: 16, fontWeight: '900', color: COLORS.textPrimary },
-  summaryItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F8F8F8' },
-  summaryText: { flex: 1, fontSize: 13, color: COLORS.textPrimary, fontWeight: '600' },
-  summaryQty: { fontWeight: '900', marginRight: 15, color: COLORS.primary, fontSize: 15 },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFFFFF', padding: 25, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopLeftRadius: 35, borderTopRightRadius: 35, elevation: 25, shadowColor: '#000', shadowOffset: { width: 0, height: -5 }, shadowOpacity: 0.1, shadowRadius: 15 },
-  footerLabel: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
-  footerValue: { color: COLORS.textPrimary, fontSize: 26, fontWeight: '900' },
-  confirmButton: { backgroundColor: COLORS.primary, paddingHorizontal: 30, paddingVertical: 18, borderRadius: 20, flexDirection: 'row', alignItems: 'center', elevation: 12, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 10 },
-  confirmButtonText: { color: '#FFF', fontWeight: '900', fontSize: 16, letterSpacing: 1 },
+  listPadding: { paddingHorizontal: 20, paddingBottom: 200, paddingTop: 10 },
+  sizeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#F8F8F8' },
+  sizeLabel: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '800' },
+  miniColorList: { flexDirection: 'row', marginTop: 8 },
+  miniColorDot: { width: 14, height: 14, borderRadius: 7, marginRight: 6, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
+  controlsContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 15, paddingLeft: 12, borderWidth: 1.5, borderColor: '#F0F0F0' },
+  quantityInput: { fontSize: 20, fontWeight: '900', width: 55, textAlign: 'center', paddingVertical: 12 },
+  arrowStack: { borderLeftWidth: 1.5, borderLeftColor: '#F0F0F0' },
+  arrowButton: { paddingHorizontal: 10, paddingVertical: 4 },
+  summaryTray: { position: 'absolute', bottom: 110, left: 0, right: 0, backgroundColor: '#FFF', borderTopLeftRadius: 35, borderTopRightRadius: 35, padding: 25, elevation: 35, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 25, zIndex: 100 },
+  trayHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, alignItems: 'center' },
+  trayTitle: { fontSize: 18, fontWeight: '900', color: COLORS.textPrimary },
+  summaryItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F8F8F8' },
+  summaryText: { flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '700' },
+  summaryQty: { fontWeight: '900', color: COLORS.primary, fontSize: 16 },
+  summaryItemPrice: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600' },
+  removeButton: { padding: 8, backgroundColor: '#FFF0F0', borderRadius: 10 },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFFFFF', padding: 25, paddingBottom: Platform.OS === 'ios' ? 40 : 25, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopLeftRadius: 40, borderTopRightRadius: 40, elevation: 30, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.15, shadowRadius: 20 },
+  footerInfo: { flex: 1 },
+  totalBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor:  COLORS.surface, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, marginBottom: 5 },
+  totalBadgeText: { fontSize: 11, fontWeight: '900', marginLeft: 5, textTransform: 'uppercase' },
+  footerValue: { color: COLORS.textPrimary, fontSize: 32, fontWeight: '900' },
+  confirmButton: { flex: 1, marginLeft: 20, paddingLeft: 25, paddingRight: 8, paddingVertical: 8, borderRadius: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', elevation: 15, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12 },
+  confirmButtonText: { color: '#FFF', fontWeight: '900', fontSize: 18, letterSpacing: 0.5 },
+  confirmIconBox: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center' },
   selectionGrid: { padding: 25, flex: 1 },
-  selectionTitle: { fontSize: 22, fontWeight: '900', color: COLORS.textPrimary, marginBottom: 25, textAlign: 'left', letterSpacing: 0.5 },
-  typeCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 25, flexDirection: 'row', alignItems: 'center', marginBottom: 18, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 10 },
-  typeIconPlaceholder: { width: 60, height: 60, borderRadius: 20, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center', marginRight: 20 },
-  typeText: { fontSize: 18, fontWeight: '900', flex: 1, color: COLORS.textPrimary },
-  changeTypeButton: { backgroundColor: COLORS.surface, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, marginBottom: 15, alignSelf: 'flex-start', borderWidth: 1, borderColor: '#EEE' },
-  changeTypeText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '800' },
+  selectionTitle: { fontSize: 24, fontWeight: '900', color: COLORS.textPrimary, marginBottom: 25, letterSpacing: -0.5 },
+  typeCard: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 20, flexDirection: 'row', alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)', elevation: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 12 },
+  typeIconPlaceholder: { width: 64, height: 64, borderRadius: 22, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center', marginRight: 18, elevation: 4, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4 },
+  typeText: { fontSize: 20, fontWeight: '900', color: COLORS.textPrimary, marginBottom: 2 },
+  typeSubText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500', opacity: 0.6 },
+  arrowCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
 });
 
-export default SizeSelectionScreen;
+export default SizeSelectionScreen;

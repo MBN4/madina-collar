@@ -16,7 +16,8 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Animated,
-  Easing
+  Easing,
+  Image
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
@@ -66,6 +67,7 @@ const ConfirmOrderScreen = ({ navigation }) => {
 
   const entranceAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const modalScale = useRef(new Animated.Value(0.8)).current;
 
   // Derive current theme from the first item in cart
   const firstCartKey = Object.keys(cart)[0];
@@ -78,6 +80,18 @@ const ConfirmOrderScreen = ({ navigation }) => {
       Animated.spring(slideAnim, { toValue: 0, friction: 8, useNativeDriver: true })
     ]).start();
   }, []);
+
+  useEffect(() => {
+    if (isSuccess) {
+      Animated.spring(modalScale, {
+        toValue: 1,
+        friction: 7,
+        useNativeDriver: true
+      }).start();
+    } else {
+      modalScale.setValue(0.8);
+    }
+  }, [isSuccess]);
 
   const groupedCart = {};
   const flatOrderSummary = [];
@@ -118,6 +132,9 @@ const ConfirmOrderScreen = ({ navigation }) => {
   };
 
   const handlePayment = async () => {
+    if (totalItems === 0) {
+      return Alert.alert("Empty Order", "Your cart is empty. Please select some items first.");
+    }
     if (!accountNumber || accountNumber.length !== 11) {
       return Alert.alert("Invalid Number", "Please enter a valid 11-digit phone number (e.g. 03XXXXXXXXX)");
     }
@@ -141,16 +158,16 @@ const ConfirmOrderScreen = ({ navigation }) => {
   return (
     <View style={styles.mainContainer}>
       <StatusBar barStyle="dark-content" />
-      <LinearGradient colors={currentTheme.gradient} style={{ height: 210 }}>
-        <View style={[styles.navHeader, { paddingTop: 90 }]}>
+      <LinearGradient colors={currentTheme.gradient} style={{ height: 240 }}>
+        <View style={styles.logoHeader}>
+           <Image source={require('../../assets/images/madina-collar-round.png')} style={styles.headerLogo} resizeMode="contain" />
+        </View>
+        <View style={[styles.navHeader, { marginTop: -80, paddingBottom: 10 }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <View style={styles.iconCircle}>
               <ChevronLeft color={COLORS.textPrimary} size={28} />
             </View>
           </TouchableOpacity>
-          <View style={{ flex: 1, marginLeft: 15 }}>
-            <Text style={[styles.headerTitle, { color: '#000' }]}>Review Order</Text>
-          </View>
         </View>
       </LinearGradient>
 
@@ -167,7 +184,9 @@ const ConfirmOrderScreen = ({ navigation }) => {
               <Animated.View style={{ opacity: entranceAnim, transform: [{ translateY: slideAnim }] }}>
                 <View style={styles.section}>
                   <View style={styles.sectionHeader}>
-                    <CreditCard size={18} color={currentTheme.primary} style={{ marginRight: 8 }} />
+                    <View style={[styles.sectionIcon, { backgroundColor: currentTheme.primary + '15' }]}>
+                       <CreditCard size={18} color={currentTheme.primary} />
+                    </View>
                     <Text style={styles.sectionTitle}>ORDER SUMMARY</Text>
                   </View>
                   
@@ -190,7 +209,9 @@ const ConfirmOrderScreen = ({ navigation }) => {
                           <View style={{ flex: 1, paddingRight: 10 }}>
                             <Text style={styles.itemQuality}>{firstItem.type} Styles</Text>
                             <Text numberOfLines={1} style={styles.itemDetailText}>{label} • {firstItem.color}</Text>
-                            <Text style={[styles.itemSizeSummary, { color: itemTheme.primary }]}>{qualityTotal} Items Selected</Text>
+                            <View style={styles.itemBadge}>
+                               <Text style={[styles.itemSizeSummary, { color: itemTheme.primary }]}>{qualityTotal} Items Selected</Text>
+                            </View>
                           </View>
                           <View style={styles.headerRight}>
                             <Text style={styles.itemPrice}>Rs {qualityTotal * UNIT_PRICE}</Text>
@@ -212,22 +233,35 @@ const ConfirmOrderScreen = ({ navigation }) => {
                     );
                   })}
                   
-                  <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Grand Total</Text>
-                    <Text style={[styles.totalValue, { color: currentTheme.primary }]}>Rs {subtotal}</Text>
+                  <View style={styles.totalCard}>
+                     <View style={styles.totalRow}>
+                        <Text style={styles.totalLabel}>Items Total</Text>
+                        <Text style={styles.totalValueText}>Rs {subtotal}</Text>
+                     </View>
+                     <View style={styles.totalRow}>
+                        <Text style={styles.totalLabel}>Delivery</Text>
+                        <Text style={[styles.totalValueText, { color: '#4CAF50' }]}>FREE</Text>
+                     </View>
+                     <View style={[styles.totalRow, { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F0F0F0' }]}>
+                        <Text style={styles.grandTotalLabel}>Grand Total</Text>
+                        <Text style={[styles.grandTotalValue, { color: currentTheme.primary }]}>Rs {subtotal}</Text>
+                     </View>
                   </View>
 
                   <TouchableOpacity 
-                    style={styles.addMoreButton}
+                    activeOpacity={0.8}
+                    style={[styles.addMoreButton, { borderColor: currentTheme.primary }]}
                     onPress={() => navigation.navigate('Quality')}
                   >
-                    <Text style={[styles.addMoreText, { color: currentTheme.primary, borderColor: currentTheme.primary }]}>+ ADD MORE ITEMS</Text>
+                    <Text style={[styles.addMoreText, { color: currentTheme.primary }]}>+ ADD MORE ITEMS</Text>
                   </TouchableOpacity>
                 </View>
 
                 <View style={[styles.section, { marginTop: 10 }]}>
                   <View style={styles.sectionHeader}>
-                    <Truck size={18} color={currentTheme.primary} style={{ marginRight: 8 }} />
+                    <View style={[styles.sectionIcon, { backgroundColor: currentTheme.primary + '15' }]}>
+                       <Truck size={18} color={currentTheme.primary} />
+                    </View>
                     <Text style={styles.sectionTitle}>CONTACT DETAILS</Text>
                   </View>
                   
@@ -262,6 +296,7 @@ const ConfirmOrderScreen = ({ navigation }) => {
 
       <View style={styles.footer}>
         <TouchableOpacity 
+          activeOpacity={0.8}
           style={[styles.payButton, { backgroundColor: currentTheme.primary, shadowColor: currentTheme.primary }, loading && { opacity: 0.7 }]} 
           onPress={handlePayment}
           disabled={loading}
@@ -276,14 +311,15 @@ const ConfirmOrderScreen = ({ navigation }) => {
 
       <Modal visible={isSuccess} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.successCard}>
-            <View style={styles.successIconWrapper}>
+          <Animated.View style={[styles.successCard, { transform: [{ scale: modalScale }] }]}>
+            <View style={[styles.successIconWrapper, { backgroundColor: currentTheme.primary }]}>
               <CheckCircle2 color="#FFF" size={50} />
             </View>
             <Text style={styles.successTitle}>Order Received!</Text>
             <Text style={styles.successSubtitle}>Thank you for choosing Madina Collar. We'll be in touch very soon.</Text>
             <TouchableOpacity 
-              style={styles.closeButton}
+              activeOpacity={0.8}
+              style={[styles.closeButton, { backgroundColor: currentTheme.primary }]}
               onPress={() => {
                 setIsSuccess(false);
                 navigation.navigate('Quality');
@@ -291,7 +327,7 @@ const ConfirmOrderScreen = ({ navigation }) => {
             >
               <Text style={styles.closeButtonText}>CONTINUE SHOPPING</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
@@ -300,60 +336,68 @@ const ConfirmOrderScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: COLORS.background },
-  navHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, height: 60 },
-  iconCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.8)', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '900', letterSpacing: 0.5 },
-  contentContainer: { flex: 1, backgroundColor: COLORS.background, borderTopLeftRadius: 30, borderTopRightRadius: 30, marginTop: -35 },
-  scrollContent: { padding: 25, paddingBottom: 120 },
-  section: { marginBottom: 30 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-  sectionTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '900', letterSpacing: 1 },
+  logoHeader: { alignItems: 'center', paddingTop: 60, height: 140 },
+  headerLogo: { width: 80, height: 80 },
+  navHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 25 },
+  iconCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', elevation: 4 },
+  headerTitle: { color: COLORS.textPrimary, fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
+  headerSubtitle: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '700', opacity: 0.6, marginTop: 2 },
+  contentContainer: { flex: 1, backgroundColor: COLORS.background, borderTopLeftRadius: 35, borderTopRightRadius: 35, marginTop: -35 },
+  scrollContent: { padding: 25, paddingBottom: 150 },
+  section: { marginBottom: 35 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  sectionIcon: { width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  sectionTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '900', letterSpacing: 1.5, opacity: 0.8 },
   itemQuality: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900' },
-  itemDetailText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '600', marginTop: 2 },
-  itemSizeSummary: { color: COLORS.primary, fontSize: 11, marginTop: 4, fontWeight: '800', textTransform: 'uppercase' },
+  itemDetailText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '600', marginTop: 3 },
+  itemBadge: { marginTop: 6, alignSelf: 'flex-start', backgroundColor: COLORS.surface, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  itemSizeSummary: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
   itemPrice: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900', marginRight: 10 },
   qualityGroup: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 25,
     marginBottom: 15,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    elevation: 5,
+    borderColor: 'rgba(0,0,0,0.03)',
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   qualityHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
-  expandedContent: { backgroundColor: COLORS.surface, paddingHorizontal: 20, paddingBottom: 15, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
-  sizeBreakdown: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 },
+  expandedContent: { backgroundColor: COLORS.surface, paddingHorizontal: 20, paddingBottom: 18, borderTopWidth: 1, borderTopColor: '#F8F8F8' },
+  sizeBreakdown: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 },
   breakdownText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '700' },
   breakdownPrice: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, paddingTop: 20, paddingHorizontal: 5, borderTopWidth: 1, borderTopColor: '#E0E0E0' },
-  totalLabel: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900' },
-  totalValue: { color: COLORS.primary, fontSize: 32, fontWeight: '900' },
-  addMoreButton: { marginTop: 25, padding: 18, borderRadius: 15, borderWidth: 2, borderColor: COLORS.primary, borderStyle: 'dashed', alignItems: 'center', backgroundColor: COLORS.surface },
-  addMoreText: { color: COLORS.primary, fontWeight: '900', fontSize: 14, letterSpacing: 1 },
-  inputCard: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', elevation: 3 },
-  inputLabel: { color: COLORS.textPrimary, fontSize: 14, marginBottom: 12, fontWeight: '700' },
-  phoneNumberInput: { backgroundColor: COLORS.surface, color: COLORS.textPrimary, padding: 18, borderRadius: 15, fontSize: 18, fontWeight: '800', borderWidth: 1, borderColor: '#DDD', textAlign: 'center', letterSpacing: 2 },
-  infoBox: { backgroundColor: '#FFF9C4', padding: 12, borderRadius: 12, marginTop: 15 },
-  helperText: { color: COLORS.textSecondary, fontSize: 12, lineHeight: 18, fontWeight: '600', fontStyle: 'italic' },
-  securityNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 30, opacity: 0.7 },
-  securityText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 25, backgroundColor: COLORS.background, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
-  payButton: { backgroundColor: COLORS.primary, padding: 22, borderRadius: 20, alignItems: 'center', elevation: 12, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12 },
+  totalCard: { backgroundColor: COLORS.surface, borderRadius: 25, padding: 20, marginTop: 10 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  totalLabel: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '700' },
+  totalValueText: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
+  grandTotalLabel: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900' },
+  grandTotalValue: { fontSize: 26, fontWeight: '900' },
+  addMoreButton: { marginTop: 25, padding: 20, borderRadius: 20, borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', backgroundColor: '#FFF' },
+  addMoreText: { fontWeight: '900', fontSize: 14, letterSpacing: 1 },
+  inputCard: { backgroundColor: '#FFFFFF', padding: 25, borderRadius: 30, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)', elevation: 5 },
+  inputLabel: { color: COLORS.textPrimary, fontSize: 15, marginBottom: 15, fontWeight: '800' },
+  phoneNumberInput: { backgroundColor: COLORS.surface, color: COLORS.textPrimary, padding: 20, borderRadius: 18, fontSize: 20, fontWeight: '900', borderWidth: 1.5, borderColor: '#EEE', textAlign: 'center', letterSpacing: 2.5 },
+  infoBox: { backgroundColor: '#FFF9C4', padding: 15, borderRadius: 15, marginTop: 20 },
+  helperText: { color: '#856404', fontSize: 12, lineHeight: 18, fontWeight: '700', fontStyle: 'italic' },
+  securityNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 40, opacity: 0.6 },
+  securityText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '700' },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 25, paddingBottom: Platform.OS === 'ios' ? 40 : 25, backgroundColor: COLORS.background, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
+  payButton: { padding: 22, borderRadius: 25, alignItems: 'center', elevation: 15, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15 },
   payButtonText: { color: '#FFF', fontWeight: '900', fontSize: 18, letterSpacing: 1 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  successCard: { width: '85%', backgroundColor: '#FFFFFF', borderRadius: 35, padding: 40, alignItems: 'center', elevation: 20 },
-  successIconWrapper: { width: 100, height: 100, borderRadius: 50, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  successTitle: { color: COLORS.textPrimary, fontSize: 26, fontWeight: '900', marginTop: 10 },
-  successSubtitle: { color: COLORS.textSecondary, textAlign: 'center', marginTop: 15, lineHeight: 22, fontWeight: '600' },
-  closeButton: { backgroundColor: COLORS.primary, width: '100%', padding: 18, borderRadius: 15, marginTop: 35, alignItems: 'center', elevation: 8 },
-  closeButtonText: { color: '#FFF', fontWeight: '900', fontSize: 16 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  successCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 40, padding: 40, alignItems: 'center', elevation: 25 },
+  successIconWrapper: { width: 110, height: 110, borderRadius: 55, justifyContent: 'center', alignItems: 'center', marginBottom: 25, elevation: 10, shadowOpacity: 0.3, shadowRadius: 10 },
+  successTitle: { color: COLORS.textPrimary, fontSize: 28, fontWeight: '900' },
+  successSubtitle: { color: COLORS.textSecondary, textAlign: 'center', marginTop: 15, lineHeight: 24, fontWeight: '600', fontSize: 15 },
+  closeButton: { width: '100%', padding: 20, borderRadius: 20, marginTop: 40, alignItems: 'center', elevation: 8 },
+  closeButtonText: { color: '#FFF', fontWeight: '900', fontSize: 16, letterSpacing: 1 },
 });
 
 export default ConfirmOrderScreen;
-
+

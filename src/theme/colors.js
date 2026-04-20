@@ -18,23 +18,23 @@ export const QUALITY_THEMES = {
     accent: '#FBC02D'
   },
   'New Madina Collar': {
-    primary: '#e83136',
-    gradient: ['#FFFFFF', '#e83136'],
-    accent: '#b8262a'
+    primary: '#FFD700',
+    gradient: ['#FFFFFF', '#FFD700'],
+    accent: '#FBC02D'
   },
   'Anarkali Collar': {
-    primary: '#ffcb05',
-    gradient: ['#FFFFFF', '#ffcb05'],
-    accent: '#cca204'
+    primary: '#FFD700',
+    gradient: ['#FFFFFF', '#FFD700'],
+    accent: '#FBC02D'
   },
   'Angle Collar': {
-    primary: '#d2aa41',
-    gradient: ['#FFFFFF', '#d2aa41'],
-    accent: '#a88834'
+    primary: '#FFD700',
+    gradient: ['#FFFFFF', '#FFD700'],
+    accent: '#FBC02D'
   },
   'Pak Collar': {
-    primary: '#00a651',
-    gradient: ['#FFFFFF', '#00a651'],
-    accent: '#008541'
+    primary: '#FFD700',
+    gradient: ['#FFFFFF', '#FFD700'],
+    accent: '#FBC02D'
   }
 };

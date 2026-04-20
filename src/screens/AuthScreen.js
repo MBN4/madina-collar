@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, TextInput, TouchableOpacity, 
-  SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Alert, Animated, StatusBar
+  SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Alert, Animated, StatusBar, Image
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../theme/colors';
@@ -56,11 +56,13 @@ const AuthScreen = () => {
 
   const entranceAnim = useRef(new Animated.Value(0)).current;
   const formAnim = useRef(new Animated.Value(50)).current;
+  const logoScale = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(entranceAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-      Animated.spring(formAnim, { toValue: 0, friction: 8, useNativeDriver: true })
+      Animated.spring(formAnim, { toValue: 0, friction: 8, useNativeDriver: true }),
+      Animated.spring(logoScale, { toValue: 1, friction: 6, useNativeDriver: true })
     ]).start();
   }, [isLogin, signupStep]);
 
@@ -120,7 +122,10 @@ const AuthScreen = () => {
       <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.content}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-            <Animated.View style={[styles.header, { opacity: entranceAnim, transform: [{ translateY: formAnim }] }]}>
+            <Animated.View style={[styles.header, { opacity: entranceAnim, transform: [{ translateY: formAnim }, { scale: logoScale }] }]}>
+              <View style={styles.logoContainer}>
+                 <Image source={require('../../assets/images/madina-collar-round.png')} style={styles.logo} resizeMode="contain" />
+              </View>
               <Text style={styles.title}>{isLogin ? 'Welcome Back' : 'Join the Elite'}</Text>
               <Text style={styles.subtitle}>{isLogin ? 'Sign in to continue your journey.' : `Step ${signupStep} of 3`}</Text>
             </Animated.View>
@@ -141,7 +146,7 @@ const AuthScreen = () => {
                     />
                   </View>
                   <PasswordInput placeholder="Password" value={password} onChangeText={setPassword} />
-                  <TouchableOpacity style={styles.mainButton} onPress={handleLogin}>
+                  <TouchableOpacity activeOpacity={0.8} style={styles.mainButton} onPress={handleLogin}>
                     <Text style={styles.buttonText}>SIGN IN</Text>
                   </TouchableOpacity>
                 </>
@@ -171,7 +176,7 @@ const AuthScreen = () => {
                       <PasswordInput placeholder="Confirm Password" value={confirmPassword} onChangeText={setConfirmPassword} />
                     </>
                   )}
-                  <TouchableOpacity style={[styles.mainButton, (signupStep === 2 && timer === 0) && { opacity: 0.5 }]} onPress={handleSignupFlow} disabled={signupStep === 2 && timer === 0}>
+                  <TouchableOpacity activeOpacity={0.8} style={[styles.mainButton, (signupStep === 2 && timer === 0) && { opacity: 0.5 }]} onPress={handleSignupFlow} disabled={signupStep === 2 && timer === 0}>
                     <Text style={styles.buttonText}>{signupStep === 3 ? 'FINISH' : 'CONTINUE'}</Text>
                   </TouchableOpacity>
                   {signupStep > 1 && (
@@ -192,77 +197,78 @@ const AuthScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flex: 1, paddingHorizontal: 30 },
-  header: { marginBottom: 40 },
-  title: { fontSize: 36, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: 1 },
-  subtitle: { fontSize: 16, color: COLORS.textSecondary, marginTop: 8, letterSpacing: 0.5 },
+  content: { flex: 1, paddingHorizontal: 35 },
+  header: { marginBottom: 35, alignItems: 'center' },
+  logoContainer: { marginBottom: 20, elevation: 15, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 15 },
+  logo: { width: 120, height: 120 },
+  title: { fontSize: 32, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: -0.5, textAlign: 'center' },
+  subtitle: { fontSize: 16, color: COLORS.textSecondary, marginTop: 8, letterSpacing: 0.5, textAlign: 'center', opacity: 0.7 },
   form: { width: '100%' },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    paddingHorizontal: 15,
-    elevation: 2,
+    borderColor: '#EFEFEF',
+    paddingHorizontal: 18,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.05,
-    shadowRadius: 5,
+    shadowRadius: 8,
   },
-  inputIcon: { marginRight: 10 },
+  inputIcon: { marginRight: 12 },
   passwordContainer: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     backgroundColor: '#FFFFFF', 
-    borderRadius: 16, 
+    borderRadius: 20, 
     marginBottom: 15, 
     borderWidth: 1, 
-    borderColor: '#E0E0E0', 
-    paddingHorizontal: 15,
-    elevation: 2,
+    borderColor: '#EFEFEF', 
+    paddingHorizontal: 18,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.05,
-    shadowRadius: 5,
+    shadowRadius: 8,
   },
-  flexInput: { flex: 1, paddingVertical: 18, color: COLORS.textPrimary, fontSize: 16, fontWeight: '500' },
+  flexInput: { flex: 1, paddingVertical: Platform.OS === 'ios' ? 20 : 16, color: COLORS.textPrimary, fontSize: 16, fontWeight: '600' },
   input: { 
     backgroundColor: '#FFFFFF', 
-    padding: 18, 
-    borderRadius: 16, 
+    padding: 20, 
+    borderRadius: 20, 
     color: COLORS.textPrimary, 
     marginBottom: 15, 
     borderWidth: 1, 
-    borderColor: '#E0E0E0', 
+    borderColor: '#EFEFEF', 
     fontSize: 16,
-    elevation: 2,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 5,
+    shadowRadius: 8,
   },
   eyeButton: { padding: 5 },
-  otpInput: { textAlign: 'center', fontSize: 32, letterSpacing: 15, color: COLORS.primary, fontWeight: '900' },
-  timerText: { color: COLORS.primary, textAlign: 'center', marginBottom: 15, fontSize: 14, fontWeight: '600' },
+  otpInput: { textAlign: 'center', fontSize: 36, letterSpacing: 10, color: COLORS.primary, fontWeight: '900' },
+  timerText: { color: COLORS.primary, textAlign: 'center', marginBottom: 15, fontSize: 14, fontWeight: '700' },
   mainButton: { 
     backgroundColor: COLORS.primary, 
-    padding: 20, 
-    borderRadius: 16, 
+    padding: 22, 
+    borderRadius: 20, 
     alignItems: 'center', 
-    marginTop: 10, 
-    elevation: 10,
+    marginTop: 15, 
+    elevation: 15,
     shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 15,
   },
-  buttonText: { color: '#FFF', fontWeight: '900', fontSize: 18, letterSpacing: 2 },
-  backButton: { marginTop: 15, padding: 10 },
-  backButtonText: { color: COLORS.textSecondary, textAlign: 'center', fontWeight: '600' },
-  switchButton: { marginTop: 30, marginBottom: 40, alignItems: 'center' },
+  buttonText: { color: '#FFF', fontWeight: '900', fontSize: 18, letterSpacing: 1.5 },
+  backButton: { marginTop: 20, padding: 10 },
+  backButtonText: { color: COLORS.textSecondary, textAlign: 'center', fontWeight: '700' },
+  switchButton: { marginTop: 35, marginBottom: 40, alignItems: 'center' },
   switchText: { color: COLORS.textSecondary, fontSize: 15, letterSpacing: 0.5 }
 });
 

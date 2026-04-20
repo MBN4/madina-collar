@@ -38,19 +38,26 @@ const QualityScreen = ({ navigation }) => {
   const logout = useAuthStore((state) => state.logout);
   const fadeAnims = useRef(QUALITIES.map(() => new Animated.Value(0))).current;
   const slideAnims = useRef(QUALITIES.map(() => new Animated.Value(30))).current;
+  const scaleAnims = useRef(QUALITIES.map(() => new Animated.Value(0.95))).current;
 
   useEffect(() => {
     const animations = QUALITIES.map((_, i) => {
       return Animated.parallel([
         Animated.timing(fadeAnims[i], {
           toValue: 1,
-          duration: 600,
+          duration: 800,
           delay: i * 150,
           useNativeDriver: true,
         }),
         Animated.spring(slideAnims[i], {
           toValue: 0,
-          friction: 6,
+          friction: 8,
+          delay: i * 150,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnims[i], {
+          toValue: 1,
+          friction: 8,
           delay: i * 150,
           useNativeDriver: true,
         })
@@ -67,13 +74,16 @@ const QualityScreen = ({ navigation }) => {
           styles.cardWrapper,
           { 
             opacity: fadeAnims[index],
-            transform: [{ translateY: slideAnims[index] }]
+            transform: [
+              { translateY: slideAnims[index] },
+              { scale: scaleAnims[index] }
+            ]
           }
         ]}
       >
         <TouchableOpacity
           style={styles.card}
-          activeOpacity={0.9}
+          activeOpacity={0.8}
           onPress={() => navigation.navigate('SizeSelection', { quality: item.name })}
         >
           {item.tag ? (
@@ -81,10 +91,17 @@ const QualityScreen = ({ navigation }) => {
               <Text style={styles.tagText}>{item.tag}</Text>
             </View>
           ) : null}
-          <Image source={item.image} style={styles.cardImage} resizeMode="contain" />
+          <View style={styles.imageContainer}>
+             <Image source={item.image} style={styles.cardImage} resizeMode="contain" />
+          </View>
           <View style={styles.cardFooter}>
-            <Text style={styles.cardText} numberOfLines={1}>{item.name}</Text>
-            <ChevronRight size={16} color={COLORS.primary} />
+            <View style={{ flex: 1 }}>
+               <Text style={styles.cardText} numberOfLines={1}>{item.name}</Text>
+               <Text style={styles.cardSubText}>Premium Quality</Text>
+            </View>
+            <View style={styles.arrowIcon}>
+               <ChevronRight size={14} color="#FFF" strokeWidth={4} />
+            </View>
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -96,13 +113,20 @@ const QualityScreen = ({ navigation }) => {
       <StatusBar barStyle="dark-content" />
       <LinearGradient colors={COLORS.yellowGradient} style={{ flex: 1 }}>
         <SafeAreaView style={styles.safeArea}>
-          <View style={[styles.header, { paddingTop: 40 }]}>
-            <View>
-              <Text style={styles.welcomeText}>Welcome to</Text>
-              <Text style={styles.headerTitle}>MADINA COLLAR</Text>
+          <View style={styles.header}>
+            <View style={styles.brandContainer}>
+              <Image 
+                source={require('../../assets/images/madina-collar-round.png')} 
+                style={styles.headerLogo} 
+                resizeMode="contain" 
+              />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={styles.welcomeText}>WELCOME TO</Text>
+                <Text style={styles.headerTitle}>MADINA COLLAR</Text>
+              </View>
             </View>
             <TouchableOpacity onPress={() => logout()} style={styles.logoutButton}>
-              <LogOut size={20} color={COLORS.textPrimary} />
+              <LogOut size={18} color={COLORS.textPrimary} />
             </TouchableOpacity>
           </View>
 
@@ -112,7 +136,7 @@ const QualityScreen = ({ navigation }) => {
           >
             <View style={styles.titleSection}>
               <View style={styles.trendBadge}>
-                <TrendingUp size={14} color="#FFF" style={{ marginRight: 5 }} />
+                <TrendingUp size={12} color="#FFF" style={{ marginRight: 6 }} />
                 <Text style={styles.trendText}>Top Quality Fabrics</Text>
               </View>
               <Text style={styles.mainTitle}>Collections</Text>
@@ -136,33 +160,46 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 25,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === 'android' ? 50 : 20,
+    paddingBottom: 25,
+  },
+  brandContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerLogo: {
+    width: 45,
+    height: 45,
   },
   welcomeText: {
     color: COLORS.textSecondary,
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 1,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    opacity: 0.7,
   },
   headerTitle: {
     color: COLORS.textPrimary,
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   logoutButton: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    padding: 10,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    padding: 12,
+    borderRadius: 15,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -170,35 +207,42 @@ const styles = StyleSheet.create({
   titleSection: {
     paddingHorizontal: 25,
     marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 25,
   },
   trendBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
     borderRadius: 20,
     alignSelf: 'flex-start',
-    marginBottom: 10,
+    marginBottom: 12,
+    elevation: 5,
+    shadowColor: COLORS.accent,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
   trendText: {
     color: '#FFF',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
     textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   mainTitle: {
     color: COLORS.textPrimary,
-    fontSize: 38,
+    fontSize: 42,
     fontWeight: '900',
     marginBottom: 4,
+    letterSpacing: -1,
   },
   subtitle: {
     color: COLORS.textSecondary,
     fontSize: 16,
-    fontWeight: '500',
-    opacity: 0.8,
+    fontWeight: '600',
+    lineHeight: 22,
+    opacity: 0.7,
   },
   gridContainer: {
     flexDirection: 'row',
@@ -208,56 +252,83 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     width: '48%',
-    marginBottom: 15,
+    marginBottom: 20,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    padding: 15,
+    borderRadius: 30,
+    padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    elevation: 8,
+    borderColor: 'rgba(0,0,0,0.03)',
+    elevation: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowRadius: 15,
+  },
+  imageContainer: {
+    width: '100%',
+    height: 120,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   tagBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
+    top: 20,
+    left: 20,
+    backgroundColor: '#FFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
     zIndex: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    elevation: 2,
   },
   tagText: {
     fontSize: 9,
     fontWeight: '900',
     color: COLORS.accent,
     textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   cardImage: {
-    width: 80,
-    height: 80,
-    marginVertical: 10,
+    width: '80%',
+    height: '80%',
   },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     width: '100%',
-    marginTop: 5,
-    paddingHorizontal: 5,
+    paddingHorizontal: 8,
+    paddingBottom: 5,
   },
   cardText: {
     color: COLORS.textPrimary,
-    fontSize: 14,
-    fontWeight: '800',
-    flex: 1,
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: -0.2,
   },
+  cardSubText: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '600',
+    opacity: 0.6,
+    marginTop: 1,
+  },
+  arrowIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 5,
+  }
 });
 
 export default QualityScreen;
