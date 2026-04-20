@@ -5,14 +5,15 @@ const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
 
 router.post('/place', auth, async (req, res) => {
-  const { cartItems, totalAmount, paymentMethod, accountNumber } = req.body;
+  const { cartItems, totalAmount, paymentMethod, accountNumber, comments } = req.body;
 
   try {
     const order = await Order.create({
       userId: req.user.id,
       total_amount: totalAmount,
       payment_method: paymentMethod,
-      account_number: accountNumber
+      account_number: accountNumber,
+      comments: comments
     });
 
     const items = cartItems.map(item => ({

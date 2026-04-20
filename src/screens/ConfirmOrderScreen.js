@@ -26,7 +26,8 @@ import {
   ShieldCheck, 
   ChevronDown,
   CreditCard,
-  Truck
+  Truck,
+  MessageSquare
 } from 'lucide-react-native';
 import { COLORS, QUALITY_THEMES } from '../theme/colors';
 import { useCartStore } from '../store/useCartStore';
@@ -64,12 +65,12 @@ const ConfirmOrderScreen = ({ navigation }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [accountNumber, setAccountNumber] = useState('');
+  const [orderComments, setOrderComments] = useState('');
 
   const entranceAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   const modalScale = useRef(new Animated.Value(0.8)).current;
 
-  // Derive current theme from the first item in cart
   const firstCartKey = Object.keys(cart)[0];
   const firstQuality = firstCartKey ? firstCartKey.split('|')[0] : 'Madina Collar';
   const currentTheme = QUALITY_THEMES[firstQuality] || QUALITY_THEMES['Madina Collar'];
@@ -98,7 +99,6 @@ const ConfirmOrderScreen = ({ navigation }) => {
   let totalItems = 0;
 
   Object.entries(cart).forEach(([cartKey, sizes]) => {
-    // Keys format: quality|selectedType|selectedCategory|selectedColor.name|selectedWidth
     const parts = cartKey.split('|');
     const qualityBase = parts[0];
     const itemType = parts[1] || 'Standard';
@@ -145,7 +145,8 @@ const ConfirmOrderScreen = ({ navigation }) => {
         cartItems: flatOrderSummary,
         totalAmount: subtotal,
         paymentMethod: 'phone_contact',
-        accountNumber: accountNumber
+        accountNumber: accountNumber,
+        comments: orderComments
       });
       setIsSuccess(true);
     } catch (err) {
@@ -190,13 +191,11 @@ const ConfirmOrderScreen = ({ navigation }) => {
                     <Text style={styles.sectionTitle}>ORDER SUMMARY</Text>
                   </View>
                   
-                  {Object.entries(groupedCart).map(([cartKey, items], index) => {
+                  {Object.entries(groupedCart).map(([cartKey, items]) => {
                     const isExpanded = expandedQualities[cartKey];
                     const qualityTotal = items.reduce((sum, item) => sum + item.qty, 0);
                     const firstItem = items[0];
                     const itemTheme = QUALITY_THEMES[firstItem.quality] || currentTheme;
-                    
-                    // Format human readable label
                     const label = `${firstItem.category} ${firstItem.type}${firstItem.width ? ` (${firstItem.width})` : ''}`;
 
                     return (
@@ -234,15 +233,7 @@ const ConfirmOrderScreen = ({ navigation }) => {
                   })}
                   
                   <View style={styles.totalCard}>
-                     <View style={styles.totalRow}>
-                        <Text style={styles.totalLabel}>Items Total</Text>
-                        <Text style={styles.totalValueText}>Rs {subtotal}</Text>
-                     </View>
-                     <View style={styles.totalRow}>
-                        <Text style={styles.totalLabel}>Delivery</Text>
-                        <Text style={[styles.totalValueText, { color: '#4CAF50' }]}>FREE</Text>
-                     </View>
-                     <View style={[styles.totalRow, { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F0F0F0' }]}>
+                     <View style={[styles.totalRow, { marginBottom: 0 }]}>
                         <Text style={styles.grandTotalLabel}>Grand Total</Text>
                         <Text style={[styles.grandTotalValue, { color: currentTheme.primary }]}>Rs {subtotal}</Text>
                      </View>
@@ -255,6 +246,28 @@ const ConfirmOrderScreen = ({ navigation }) => {
                   >
                     <Text style={[styles.addMoreText, { color: currentTheme.primary }]}>+ ADD MORE ITEMS</Text>
                   </TouchableOpacity>
+                </View>
+
+                <View style={[styles.section, { marginTop: 10 }]}>
+                  <View style={styles.sectionHeader}>
+                    <View style={[styles.sectionIcon, { backgroundColor: currentTheme.primary + '15' }]}>
+                       <MessageSquare size={18} color={currentTheme.primary} />
+                    </View>
+                    <Text style={styles.sectionTitle}>SPECIAL INSTRUCTIONS</Text>
+                  </View>
+                  <View style={styles.inputCard}>
+                    <Text style={styles.inputLabel}>Delivery Instructions / Comments</Text>
+                    <TextInput 
+                      placeholder="Write how you want us to deliver your order..." 
+                      placeholderTextColor={COLORS.textSecondary}
+                      style={styles.commentInput}
+                      multiline
+                      numberOfLines={4}
+                      value={orderComments}
+                      onChangeText={setOrderComments}
+                      textAlignVertical="top"
+                    />
+                  </View>
                 </View>
 
                 <View style={[styles.section, { marginTop: 10 }]}>
@@ -276,11 +289,7 @@ const ConfirmOrderScreen = ({ navigation }) => {
                       value={accountNumber}
                       onChangeText={setAccountNumber}
                       returnKeyType="done"
-                      onSubmitEditing={Keyboard.dismiss}
                     />
-                    <View style={styles.infoBox}>
-                      <Text style={styles.helperText}>Our executive will call you to confirm your order details and delivery time.</Text>
-                    </View>
                   </View>
                 </View>
 
@@ -336,12 +345,10 @@ const ConfirmOrderScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: COLORS.background },
-  logoHeader: { alignItems: 'center', paddingTop: 60, height: 140 },
-  headerLogo: { width: 80, height: 80 },
+  logoHeader: { alignItems: 'center', paddingTop: 69, height: 140 },
+  headerLogo: { width: 120, height: 120 },
   navHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 25 },
   iconCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', elevation: 4 },
-  headerTitle: { color: COLORS.textPrimary, fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
-  headerSubtitle: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '700', opacity: 0.6, marginTop: 2 },
   contentContainer: { flex: 1, backgroundColor: COLORS.background, borderTopLeftRadius: 35, borderTopRightRadius: 35, marginTop: -35 },
   scrollContent: { padding: 25, paddingBottom: 150 },
   section: { marginBottom: 35 },
@@ -353,19 +360,7 @@ const styles = StyleSheet.create({
   itemBadge: { marginTop: 6, alignSelf: 'flex-start', backgroundColor: COLORS.surface, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   itemSizeSummary: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
   itemPrice: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900', marginRight: 10 },
-  qualityGroup: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 25,
-    marginBottom: 15,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.03)',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-  },
+  qualityGroup: { backgroundColor: '#FFFFFF', borderRadius: 25, marginBottom: 15, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)', elevation: 8 },
   qualityHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   expandedContent: { backgroundColor: COLORS.surface, paddingHorizontal: 20, paddingBottom: 18, borderTopWidth: 1, borderTopColor: '#F8F8F8' },
@@ -373,31 +368,26 @@ const styles = StyleSheet.create({
   breakdownText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '700' },
   breakdownPrice: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
   totalCard: { backgroundColor: COLORS.surface, borderRadius: 25, padding: 20, marginTop: 10 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  totalLabel: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '700' },
-  totalValueText: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
   grandTotalLabel: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900' },
   grandTotalValue: { fontSize: 26, fontWeight: '900' },
   addMoreButton: { marginTop: 25, padding: 20, borderRadius: 20, borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', backgroundColor: '#FFF' },
   addMoreText: { fontWeight: '900', fontSize: 14, letterSpacing: 1 },
   inputCard: { backgroundColor: '#FFFFFF', padding: 25, borderRadius: 30, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)', elevation: 5 },
   inputLabel: { color: COLORS.textPrimary, fontSize: 15, marginBottom: 15, fontWeight: '800' },
-  phoneNumberInput: { backgroundColor: COLORS.surface, color: COLORS.textPrimary, padding: 20, borderRadius: 18, fontSize: 20, fontWeight: '900', borderWidth: 1.5, borderColor: '#EEE', textAlign: 'center', letterSpacing: 2.5 },
-  infoBox: { backgroundColor: '#FFF9C4', padding: 15, borderRadius: 15, marginTop: 20 },
-  helperText: { color: '#856404', fontSize: 12, lineHeight: 18, fontWeight: '700', fontStyle: 'italic' },
+  phoneNumberInput: { backgroundColor: COLORS.surface, color: COLORS.textPrimary, padding: 20, borderRadius: 18, fontSize: 20, fontWeight: '900', borderWidth: 1.5, borderColor: '#EEE', textAlign: 'center' },
+  commentInput: { backgroundColor: COLORS.surface, color: COLORS.textPrimary, padding: 15, borderRadius: 18, fontSize: 16, fontWeight: '600', borderWidth: 1.5, borderColor: '#EEE', minHeight: 100 },
   securityNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 40, opacity: 0.6 },
   securityText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '700' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 25, paddingBottom: Platform.OS === 'ios' ? 40 : 25, backgroundColor: COLORS.background, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
-  payButton: { padding: 22, borderRadius: 25, alignItems: 'center', elevation: 15, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15 },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 25, paddingBottom: Platform.OS === 'ios' ? 40 : 25, backgroundColor: COLORS.background },
+  payButton: { padding: 22, borderRadius: 25, alignItems: 'center', elevation: 15 },
   payButtonText: { color: '#FFF', fontWeight: '900', fontSize: 18, letterSpacing: 1 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  successCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 40, padding: 40, alignItems: 'center', elevation: 25 },
-  successIconWrapper: { width: 110, height: 110, borderRadius: 55, justifyContent: 'center', alignItems: 'center', marginBottom: 25, elevation: 10, shadowOpacity: 0.3, shadowRadius: 10 },
+  successCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 40, padding: 40, alignItems: 'center' },
+  successIconWrapper: { width: 110, height: 110, borderRadius: 55, justifyContent: 'center', alignItems: 'center', marginBottom: 25 },
   successTitle: { color: COLORS.textPrimary, fontSize: 28, fontWeight: '900' },
   successSubtitle: { color: COLORS.textSecondary, textAlign: 'center', marginTop: 15, lineHeight: 24, fontWeight: '600', fontSize: 15 },
-  closeButton: { width: '100%', padding: 20, borderRadius: 20, marginTop: 40, alignItems: 'center', elevation: 8 },
-  closeButtonText: { color: '#FFF', fontWeight: '900', fontSize: 16, letterSpacing: 1 },
+  closeButton: { width: '100%', padding: 20, borderRadius: 20, marginTop: 40, alignItems: 'center' },
+  closeButtonText: { color: '#FFF', fontWeight: '900', fontSize: 16 },
 });
 
 export default ConfirmOrderScreen;
-

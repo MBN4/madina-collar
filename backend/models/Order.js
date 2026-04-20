@@ -7,6 +7,7 @@ const Order = sequelize.define('Order', {
   total_amount: { type: DataTypes.INTEGER, allowNull: false },
   payment_method: { type: DataTypes.STRING, allowNull: false },
   account_number: { type: DataTypes.STRING, allowNull: false },
+  comments: { type: DataTypes.TEXT, allowNull: true },
   status: { type: DataTypes.STRING, defaultValue: 'pending' }
 });
 

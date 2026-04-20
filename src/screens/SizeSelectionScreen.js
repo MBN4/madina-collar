@@ -357,8 +357,8 @@ const SizeSelectionScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: COLORS.background, borderTopLeftRadius: 35, borderTopRightRadius: 35, marginTop: -35 },
-  logoHeader: { alignItems: 'center', paddingTop: 60, height: 140 },
-  headerLogo: { width: 80, height: 80 },
+  logoHeader: { alignItems: 'center', paddingTop: 69, height: 140 },
+  headerLogo: { width: 120, height: 120 },
   navHeader: { paddingHorizontal: 25, flexDirection: 'row', alignItems: 'center' },
   iconCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5 },
   headerTitle: { color: COLORS.textPrimary, fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
