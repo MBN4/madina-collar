@@ -97,7 +97,6 @@ const QualityScreen = ({ navigation }) => {
           <View style={styles.cardFooter}>
             <View style={{ flex: 1 }}>
                <Text style={styles.cardText} numberOfLines={1}>{item.name}</Text>
-               <Text style={styles.cardSubText}>Premium Quality</Text>
             </View>
             <View style={styles.arrowIcon}>
                <ChevronRight size={14} color="#FFF" strokeWidth={4} />
@@ -120,7 +119,7 @@ const QualityScreen = ({ navigation }) => {
                 style={styles.headerLogo} 
                 resizeMode="contain" 
               />
-              <View style={{ marginLeft: 12 }}>
+              <View style={{ marginLeft: 15 }}>
                 <Text style={styles.welcomeText}>WELCOME TO</Text>
                 <Text style={styles.headerTitle}>MADINA COLLAR</Text>
               </View>
@@ -166,7 +165,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 25,
-    paddingTop: Platform.OS === 'android' ? 50 : 20,
+    paddingTop: Platform.OS === 'android' ? 80 : 50,
     paddingBottom: 25,
   },
   brandContainer: {
@@ -174,19 +173,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerLogo: {
-    width: 45,
-    height: 45,
+    width: 70,
+    height: 70,
   },
   welcomeText: {
     color: COLORS.textSecondary,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
     letterSpacing: 1.5,
     opacity: 0.7,
   },
   headerTitle: {
     color: COLORS.textPrimary,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
@@ -256,8 +255,8 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 30,
-    padding: 12,
+    borderRadius: 25,
+    padding: 15,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.03)',
@@ -269,28 +268,28 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 120,
+    height: 90,
     backgroundColor: COLORS.surface,
-    borderRadius: 22,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   tagBadge: {
     position: 'absolute',
-    top: 20,
-    left: 20,
+    top: 15,
+    left: 15,
     backgroundColor: '#FFF',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
     zIndex: 1,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
     elevation: 2,
   },
   tagText: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '900',
     color: COLORS.accent,
     textTransform: 'uppercase',
@@ -304,26 +303,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    paddingHorizontal: 8,
-    paddingBottom: 5,
+    paddingHorizontal: 5,
+    paddingBottom: 2,
   },
   cardText: {
     color: COLORS.textPrimary,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '900',
     letterSpacing: -0.2,
   },
-  cardSubText: {
-    color: COLORS.textSecondary,
-    fontSize: 11,
-    fontWeight: '600',
-    opacity: 0.6,
-    marginTop: 1,
-  },
   arrowIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -331,4 +323,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default QualityScreen;
+export default QualityScreen;
