@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/db.js';
 
 const Otp = sequelize.define('Otp', {
   phone: {
@@ -20,4 +20,4 @@ const Otp = sequelize.define('Otp', {
   }
 });
 
-module.exports = Otp;
+export default Otp;

@@ -1,15 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, Text, StyleSheet, TextInput, TouchableOpacity, 
-  SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Alert, Animated, StatusBar, Image
-} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS } from '../theme/colors';
 import { Eye, EyeOff, Lock, Phone, User } from 'lucide-react-native';
-import api from '../utils/api';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Alert, Animated,
+  Dimensions,
+  Easing,
+  Image,
+  KeyboardAvoidingView, Platform, ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput, TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/useAuthStore';
-
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+import { COLORS } from '../theme/colors';
+import api from '../utils/api';
 
 const PasswordInput = ({ placeholder, value, onChangeText }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -27,7 +34,7 @@ const PasswordInput = ({ placeholder, value, onChangeText }) => {
       <Lock size={20} color={COLORS.primary} style={styles.inputIcon} />
       <TextInput
         placeholder={placeholder}
-        placeholderTextColor={COLORS.textSecondary}
+        placeholderTextColor="#999"
         secureTextEntry={!isPasswordVisible}
         style={styles.flexInput}
         value={value}
@@ -39,6 +46,48 @@ const PasswordInput = ({ placeholder, value, onChangeText }) => {
         </Animated.View>
       </TouchableOpacity>
     </View>
+  );
+};
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const MarqueeRow = ({ logos, duration = 25000, reverse = false, yOffset = 0 }) => {
+  const scrollAnim = useRef(new Animated.Value(0)).current;
+  const floatingAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const totalWidth = logos.length * 150;
+    const animateScroll = () => {
+      scrollAnim.setValue(reverse ? -totalWidth : 0);
+      Animated.timing(scrollAnim, {
+        toValue: reverse ? 0 : -totalWidth,
+        duration: duration,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }).start(() => animateScroll());
+    };
+
+    const animateFloating = () => {
+      Animated.sequence([
+        Animated.timing(floatingAnim, { toValue: 10, duration: 2000 + Math.random() * 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(floatingAnim, { toValue: -10, duration: 2000 + Math.random() * 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]).start(() => animateFloating());
+    };
+
+    animateScroll();
+    animateFloating();
+  }, [logos]);
+
+  return (
+    <Animated.View style={[styles.marqueeRow, { transform: [{ translateX: scrollAnim }, { translateY: floatingAnim }] }]}>
+      {[...logos, ...logos, ...logos, ...logos].map((logo, index) => (
+        <View key={index} style={[styles.marqueeItem, { marginTop: (index % 2 === 0 ? 20 : -20) }]}>
+          <View style={styles.logoPod}>
+            <Image source={logo} style={styles.marqueeLogo} resizeMode="contain" />
+          </View>
+        </View>
+      ))}
+    </Animated.View>
   );
 };
 
@@ -116,9 +165,28 @@ const AuthScreen = () => {
     }
   };
 
+  const MARQUEE_LOGOS = [
+    require('../../assets/images/anarkali.jpg'),
+    require('../../assets/images/angle.jpg'),
+    require('../../assets/images/madina-collar.jpg'),
+    require('../../assets/images/new-madina-collar.png'),
+    require('../../assets/images/pak.jpg'),
+  ];
+
   return (
     <LinearGradient colors={COLORS.yellowGradient} style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      
+      {/* Background Diagonal Marquees */}
+      <View style={styles.marqueeBackground}>
+        <View style={[styles.diagonalMarquee, styles.bottomLeftMarquee]}>
+          <MarqueeRow logos={MARQUEE_LOGOS} duration={35000} />
+        </View>
+        <View style={[styles.diagonalMarquee, styles.bottomRightMarquee]}>
+          <MarqueeRow logos={MARQUEE_LOGOS} duration={45000} reverse />
+        </View>
+      </View>
+
       <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.content}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
@@ -126,7 +194,7 @@ const AuthScreen = () => {
               <View style={styles.logoContainer}>
                  <Image source={require('../../assets/images/madina-collar-round.png')} style={styles.logo} resizeMode="contain" />
               </View>
-              <Text style={styles.title}>{isLogin ? 'Welcome Back' : 'Join the Elite'}</Text>
+              <Text style={styles.title}>{isLogin ? 'Authentic Choice' : 'Join the Elite'}</Text>
               <Text style={styles.subtitle}>{isLogin ? 'Sign in to continue your journey.' : `Step ${signupStep} of 3`}</Text>
             </Animated.View>
             
@@ -137,7 +205,7 @@ const AuthScreen = () => {
                     <Phone size={20} color={COLORS.primary} style={styles.inputIcon} />
                     <TextInput 
                       placeholder="Phone Number" 
-                      placeholderTextColor={COLORS.textSecondary} 
+                      placeholderTextColor="#999" 
                       keyboardType="phone-pad" 
                       maxLength={11} 
                       style={styles.flexInput} 
@@ -156,17 +224,17 @@ const AuthScreen = () => {
                     <>
                       <View style={styles.inputWrapper}>
                         <User size={20} color={COLORS.primary} style={styles.inputIcon} />
-                        <TextInput placeholder="Username" placeholderTextColor={COLORS.textSecondary} style={styles.flexInput} value={username} onChangeText={setUsername} />
+                        <TextInput placeholder="Username" placeholderTextColor="#999" style={styles.flexInput} value={username} onChangeText={setUsername} />
                       </View>
                       <View style={styles.inputWrapper}>
                         <Phone size={20} color={COLORS.primary} style={styles.inputIcon} />
-                        <TextInput placeholder="Phone Number" placeholderTextColor={COLORS.textSecondary} keyboardType="phone-pad" maxLength={11} style={styles.flexInput} value={phone} onChangeText={setPhone} />
+                        <TextInput placeholder="Phone Number" placeholderTextColor="#999" keyboardType="phone-pad" maxLength={11} style={styles.flexInput} value={phone} onChangeText={setPhone} />
                       </View>
                     </>
                   )}
                   {signupStep === 2 && (
                     <View>
-                      <TextInput placeholder="0000" placeholderTextColor={COLORS.textSecondary} keyboardType="number-pad" maxLength={4} style={[styles.input, styles.otpInput]} value={otp} onChangeText={setOtp} />
+                      <TextInput placeholder="0000" placeholderTextColor="#999" keyboardType="number-pad" maxLength={4} style={[styles.input, styles.otpInput]} value={otp} onChangeText={setOtp} />
                       <Text style={styles.timerText}>{timer > 0 ? `Resend OTP in ${timer}s` : "OTP Expired. Please go back."}</Text>
                     </View>
                   )}
@@ -185,7 +253,10 @@ const AuthScreen = () => {
                 </>
               )}
               <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setSignupStep(1); }} style={styles.switchButton}>
-                <Text style={styles.switchText}>{isLogin ? "Don't have an account? " : "Already have an account? "}<Text style={{ color: COLORS.primary, fontWeight: 'bold' }}>{isLogin ? 'Sign Up' : 'Sign In'}</Text></Text>
+                <Text style={styles.switchText}>
+                  {isLogin ? "Don't have an account? " : "Already have an account? "}
+                  <Text style={styles.switchHighlight}>{isLogin ? 'Sign Up' : 'Sign In'}</Text>
+                </Text>
               </TouchableOpacity>
             </Animated.View>
           </ScrollView>
@@ -251,8 +322,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   eyeButton: { padding: 5 },
-  otpInput: { textAlign: 'center', fontSize: 36, letterSpacing: 10, color: COLORS.primary, fontWeight: '900' },
-  timerText: { color: COLORS.primary, textAlign: 'center', marginBottom: 15, fontSize: 14, fontWeight: '700' },
+  otpInput: { textAlign: 'center', fontSize: 36, letterSpacing: 10, color: COLORS.textPrimary, fontWeight: '900' },
+  timerText: { color: COLORS.textSecondary, textAlign: 'center', marginBottom: 15, fontSize: 14, fontWeight: '700' },
   mainButton: { 
     backgroundColor: COLORS.primary, 
     padding: 22, 
@@ -265,11 +336,63 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 15,
   },
-  buttonText: { color: '#FFF', fontWeight: '900', fontSize: 18, letterSpacing: 1.5 },
+  buttonText: { color: COLORS.textPrimary, fontWeight: '900', fontSize: 18, letterSpacing: 1.5 },
   backButton: { marginTop: 20, padding: 10 },
   backButtonText: { color: COLORS.textSecondary, textAlign: 'center', fontWeight: '700' },
   switchButton: { marginTop: 35, marginBottom: 40, alignItems: 'center' },
-  switchText: { color: COLORS.textSecondary, fontSize: 15, letterSpacing: 0.5 }
+  switchText: { color: COLORS.textPrimary, fontSize: 15, letterSpacing: 0.5, fontWeight: '600' },
+  switchHighlight: { color: COLORS.textSecondary, fontWeight: '900', textDecorationLine: 'underline' },
+  
+  // Marquee Styles
+  marqueeBackground: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+    zIndex: 0,
+  },
+  diagonalMarquee: {
+    position: 'absolute',
+    width: SCREEN_WIDTH * 2.5,
+    paddingVertical: 40,
+    zIndex: 0,
+  },
+  bottomLeftMarquee: {
+    bottom: 80,
+    left: -SCREEN_WIDTH * 0.7,
+    transform: [{ rotate: '-12deg' }],
+  },
+  bottomRightMarquee: {
+    bottom: -60,
+    right: -SCREEN_WIDTH * 0.7,
+    transform: [{ rotate: '12deg' }],
+  },
+  marqueeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  marqueeItem: {
+    marginHorizontal: 25,
+  },
+  logoPod: {
+    width: 90,
+    height: 90,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 45,
+    padding: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+  },
+  marqueeLogo: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.9,
+  },
 });
 
-export default AuthScreen;
+export default AuthScreen;

@@ -7,17 +7,14 @@ export const useCartStore = create((set, get) => ({
       const currentConfigCart = state.cart[cartKey] || {};
       const currentQty = currentConfigCart[size] || 0;
       const newQty = Math.min(100, Math.max(0, currentQty + delta));
-      
       const updatedConfig = { ...currentConfigCart, [size]: newQty };
       if (newQty === 0) delete updatedConfig[size];
-
       const newCart = { ...state.cart };
       if (Object.keys(updatedConfig).length === 0) {
         delete newCart[cartKey];
       } else {
         newCart[cartKey] = updatedConfig;
       }
-
       return { cart: newCart };
     });
   },
@@ -26,20 +23,17 @@ export const useCartStore = create((set, get) => ({
       const newCart = { ...state.cart };
       if (newCart[cartKey]) {
         delete newCart[cartKey][size];
-        if (Object.keys(newCart[cartKey]).length === 0) {
-          delete newCart[cartKey];
-        }
+        if (Object.keys(newCart[cartKey]).length === 0) delete newCart[cartKey];
       }
       return { cart: newCart };
     });
   },
+  resetCart: () => set({ cart: {} }),
   getTotalItems: () => {
     const { cart } = get();
     let total = 0;
     Object.values(cart).forEach(config => {
-      Object.values(config).forEach(qty => {
-        total += qty;
-      });
+      Object.values(config).forEach(qty => { total += qty; });
     });
     return total;
   }

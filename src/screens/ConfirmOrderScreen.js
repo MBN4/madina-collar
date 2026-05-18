@@ -1,393 +1,163 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  TextInput,
-  Modal,
-  Platform,
-  StatusBar,
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Animated,
-  Easing,
-  Image
+  StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Modal
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
-  ChevronLeft, 
-  CheckCircle2, 
-  ShieldCheck, 
-  ChevronDown,
-  CreditCard,
-  Truck,
-  MessageSquare
+  ChevronLeft, CheckCircle2, ChevronDown, ChevronUp, PlusCircle, Trash2, ArrowRight, Truck
 } from 'lucide-react-native';
-import { COLORS, QUALITY_THEMES } from '../theme/colors';
+import axios from 'axios';
+import { COLORS } from '../theme/colors';
 import { useCartStore } from '../store/useCartStore';
-import api from '../utils/api';
-
-const UNIT_PRICE = 45;
-
-const AnimatedChevron = ({ isExpanded, theme }) => {
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(rotateAnim, {
-      toValue: isExpanded ? 1 : 0,
-      duration: 300,
-      easing: Easing.bezier(0.4, 0, 0.2, 1),
-      useNativeDriver: true,
-    }).start();
-  }, [isExpanded]);
-
-  const rotate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg'],
-  });
-
-  return (
-    <Animated.View style={{ transform: [{ rotate }] }}>
-      <ChevronDown color={theme.primary} size={20} />
-    </Animated.View>
-  );
-};
+import { useAuthStore } from '../store/useAuthStore';
 
 const ConfirmOrderScreen = ({ navigation }) => {
-  const { cart } = useCartStore();
-  const [expandedQualities, setExpandedQualities] = useState({});
-  const [isSuccess, setIsSuccess] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { cart, getTotalItems, removeItem, resetCart } = useCartStore();
+  const { token, logout } = useAuthStore();
   const [loading, setLoading] = useState(false);
-  const [accountNumber, setAccountNumber] = useState('');
-  const [orderComments, setOrderComments] = useState('');
-
-  const entranceAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const modalScale = useRef(new Animated.Value(0.8)).current;
-
-  const firstCartKey = Object.keys(cart)[0];
-  const firstQuality = firstCartKey ? firstCartKey.split('|')[0] : 'Madina Collar';
-  const currentTheme = QUALITY_THEMES[firstQuality] || QUALITY_THEMES['Madina Collar'];
+  const [catalog, setCatalog] = useState([]);
+  const [showDetails, setShowDetails] = useState(true);
+  const [biltiInfo, setBiltiInfo] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(entranceAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.spring(slideAnim, { toValue: 0, friction: 8, useNativeDriver: true })
-    ]).start();
+    const fetchCatalog = async () => {
+      try {
+        const res = await axios.get('http://192.168.18.18:5000/api/admin/qualities');
+        setCatalog(res.data);
+      } catch (err) { console.log("Catalog Error"); }
+    };
+    fetchCatalog();
   }, []);
 
-  useEffect(() => {
-    if (isSuccess) {
-      Animated.spring(modalScale, {
-        toValue: 1,
-        friction: 7,
-        useNativeDriver: true
-      }).start();
-    } else {
-      modalScale.setValue(0.8);
-    }
-  }, [isSuccess]);
-
-  const groupedCart = {};
-  const flatOrderSummary = [];
-  let totalItems = 0;
-
-  Object.entries(cart).forEach(([cartKey, sizes]) => {
-    const parts = cartKey.split('|');
-    const qualityBase = parts[0];
-    const itemType = parts[1] || 'Standard';
-    const category = parts[2] || '';
-    const color = parts[3] || '';
-    const width = parts[4] || '';
-
-    const activeSizes = Object.entries(sizes)
-      .filter(([_, qty]) => qty > 0)
-      .map(([size, qty]) => {
-        totalItems += qty;
-        flatOrderSummary.push({ quality: qualityBase, type: itemType, size, qty });
-        return { quality: qualityBase, type: itemType, category, color, width, size, qty };
+  const cartItemsList = useMemo(() => {
+    if (!catalog.length) return [];
+    const items = [];
+    Object.entries(cart).forEach(([key, sizes]) => {
+      const parts = key.split('|');
+      const qName = parts[0];
+      const sName = parts[1];
+      const catVal = parts[2];
+      const colVal = parts[3];
+      const widVal = parts[4] || null;
+      const quality = catalog.find(q => q.name === qName);
+      const style = quality?.Styles?.find(s => s.name === sName);
+      Object.entries(sizes).forEach(([sizeVal, qty]) => {
+        const catId = style?.ProductAttributes?.find(a => a.type === 'category' && a.value === catVal)?.id;
+        const colId = style?.ProductAttributes?.find(a => a.type === 'color' && a.value === colVal)?.id;
+        const widId = widVal ? style?.ProductAttributes?.find(a => a.type === 'width' && a.value === widVal)?.id : null;
+        const sizeId = style?.ProductAttributes?.find(a => a.type === 'size' && a.value === sizeVal)?.id;
+        const matrixMatch = style?.PriceMatrices?.find(p => p.categoryId === catId && p.colorId === colId && (widId ? p.widthId === widId : true) && p.sizeId === sizeId);
+        const price = matrixMatch ? Number(matrixMatch.price) : 0;
+        items.push({ key, quality: qName, style: sName, category: catVal, color: colVal, width: widVal, size: sizeVal, qty, price });
       });
-    
-    if (activeSizes.length > 0) {
-      if (!groupedCart[cartKey]) {
-        groupedCart[cartKey] = [];
-      }
-      groupedCart[cartKey].push(...activeSizes);
-    }
-  });
+    });
+    return items;
+  }, [cart, catalog]);
 
-  const subtotal = totalItems * UNIT_PRICE;
+  const totalAmount = useMemo(() => cartItemsList.reduce((acc, item) => acc + (item.price * item.qty), 0), [cartItemsList]);
 
-  const toggleQuality = (key) => {
-    setExpandedQualities(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
-  const handlePayment = async () => {
-    if (totalItems === 0) {
-      return Alert.alert("Empty Order", "Your cart is empty. Please select some items first.");
-    }
-    if (!accountNumber || accountNumber.length !== 11) {
-      return Alert.alert("Invalid Number", "Please enter a valid 11-digit phone number (e.g. 03XXXXXXXXX)");
-    }
-
+  const handlePlaceOrder = async () => {
+    if (!biltiInfo) return Alert.alert("Required", "Please enter Bilti information.");
     setLoading(true);
     try {
-      await api.post('/orders/place', {
-        cartItems: flatOrderSummary,
-        totalAmount: subtotal,
-        paymentMethod: 'phone_contact',
-        accountNumber: accountNumber,
-        comments: orderComments
-      });
-      setIsSuccess(true);
-    } catch (err) {
-      Alert.alert("Error", err.response?.data?.msg || "Could not connect to server");
-    } finally {
+      await axios.post('http://192.168.18.18:5000/api/orders/place', {
+        cartItems: cartItemsList, totalAmount, paymentMethod: 'Transfer / Cash', biltiInfo
+      }, { headers: { Authorization: `Bearer ${token}` } });
       setLoading(false);
+      resetCart();
+      setShowSuccess(true);
+    } catch (err) {
+      setLoading(false);
+      if (err.response?.status === 401) { logout(); navigation.navigate('Auth'); }
+      else Alert.alert("Order Error", "Connection failed.");
     }
   };
 
+  const SuccessPopup = () => (
+    <Modal visible={showSuccess} transparent animationType="fade">
+      <View style={styles.modalOverlay}>
+        <Animated.View entering={ZoomIn.duration(600)} style={styles.successCard}>
+          <View style={styles.successIconBox}><CheckCircle2 size={50} color="#FFD700" /></View>
+          <Text style={styles.urduTitle}>آپ کے اعتماد کا شکریہ</Text>
+          <View style={styles.urduTextContainer}>
+            <Text style={styles.urduParagraph}>آپ نے پوری مارکیٹ میں سے مدینہ کالر کا انتخاب کیا، یہ ہمارے لیے اعزاز ہے۔</Text>
+            <Text style={styles.urduParagraph}>آپ کے اس اعتماد پر ہم دل کی گہرائیوں سے شکر گزار ہیں۔</Text>
+            <Text style={styles.urduParagraph}>دعا ہے کہ مدینہ کالر کی طرف سے لیا گیا ہر پروڈکٹ آپ کے لیے خیر و برکت اور کامیابی کا ذریعہ بنے —آمین 🤲</Text>
+          </View>
+          <Text style={styles.slogan}>✨ Trust Chosen. Quality Delivered</Text>
+          <TouchableOpacity style={styles.closeBtn} onPress={() => { setShowSuccess(false); navigation.popToTop(); }}><Text style={styles.closeBtnText}>CONTINUE SHOPPING</Text></TouchableOpacity>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+
   return (
-    <View style={styles.mainContainer}>
-      <StatusBar barStyle="dark-content" />
-      <LinearGradient colors={currentTheme.gradient} style={{ height: 240 }}>
-        <View style={styles.logoHeader}>
-           <Image source={require('../../assets/images/madina-collar-round.png')} style={styles.headerLogo} resizeMode="contain" />
-        </View>
-        <View style={[styles.navHeader, { marginTop: -80, paddingBottom: 10 }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <View style={styles.iconCircle}>
-              <ChevronLeft color={COLORS.textPrimary} size={28} />
-            </View>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-
-      <View style={styles.contentContainer}>
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <ScrollView 
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <Animated.View style={{ opacity: entranceAnim, transform: [{ translateY: slideAnim }] }}>
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}>
-                    <View style={[styles.sectionIcon, { backgroundColor: currentTheme.primary + '15' }]}>
-                       <CreditCard size={18} color={currentTheme.primary} />
-                    </View>
-                    <Text style={styles.sectionTitle}>ORDER SUMMARY</Text>
-                  </View>
-                  
-                  {Object.entries(groupedCart).map(([cartKey, items]) => {
-                    const isExpanded = expandedQualities[cartKey];
-                    const qualityTotal = items.reduce((sum, item) => sum + item.qty, 0);
-                    const firstItem = items[0];
-                    const itemTheme = QUALITY_THEMES[firstItem.quality] || currentTheme;
-                    const label = `${firstItem.category} ${firstItem.type}${firstItem.width ? ` (${firstItem.width})` : ''}`;
-
-                    return (
-                      <View key={cartKey} style={styles.qualityGroup}>
-                        <TouchableOpacity 
-                          style={styles.qualityHeader}
-                          onPress={() => toggleQuality(cartKey)}
-                          activeOpacity={0.7}
-                        >
-                          <View style={{ flex: 1, paddingRight: 10 }}>
-                            <Text style={styles.itemQuality}>{firstItem.type} Styles</Text>
-                            <Text numberOfLines={1} style={styles.itemDetailText}>{label} • {firstItem.color}</Text>
-                            <View style={styles.itemBadge}>
-                               <Text style={[styles.itemSizeSummary, { color: itemTheme.primary }]}>{qualityTotal} Items Selected</Text>
-                            </View>
-                          </View>
-                          <View style={styles.headerRight}>
-                            <Text style={styles.itemPrice}>Rs {qualityTotal * UNIT_PRICE}</Text>
-                            <AnimatedChevron isExpanded={isExpanded} theme={itemTheme} />
-                          </View>
-                        </TouchableOpacity>
-
-                        {isExpanded && (
-                          <View style={styles.expandedContent}>
-                            {items.map((item, idx) => (
-                              <View key={idx} style={styles.sizeBreakdown}>
-                                <Text style={styles.breakdownText}>Size {item.size} x {item.qty}</Text>
-                                <Text style={styles.breakdownPrice}>Rs {item.qty * UNIT_PRICE}</Text>
-                              </View>
-                            ))}
-                          </View>
-                        )}
-                      </View>
-                    );
-                  })}
-                  
-                  <View style={styles.totalCard}>
-                     <View style={[styles.totalRow, { marginBottom: 0 }]}>
-                        <Text style={styles.grandTotalLabel}>Grand Total</Text>
-                        <Text style={[styles.grandTotalValue, { color: currentTheme.primary }]}>Rs {subtotal}</Text>
-                     </View>
-                  </View>
-
-                  <TouchableOpacity 
-                    activeOpacity={0.8}
-                    style={[styles.addMoreButton, { borderColor: currentTheme.primary }]}
-                    onPress={() => navigation.navigate('Quality')}
-                  >
-                    <Text style={[styles.addMoreText, { color: currentTheme.primary }]}>+ ADD MORE ITEMS</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={[styles.section, { marginTop: 10 }]}>
-                  <View style={styles.sectionHeader}>
-                    <View style={[styles.sectionIcon, { backgroundColor: currentTheme.primary + '15' }]}>
-                       <MessageSquare size={18} color={currentTheme.primary} />
-                    </View>
-                    <Text style={styles.sectionTitle}>SPECIAL INSTRUCTIONS</Text>
-                  </View>
-                  <View style={styles.inputCard}>
-                    <Text style={styles.inputLabel}>Delivery Instructions / Comments</Text>
-                    <TextInput 
-                      placeholder="Write how you want us to deliver your order..." 
-                      placeholderTextColor={COLORS.textSecondary}
-                      style={styles.commentInput}
-                      multiline
-                      numberOfLines={4}
-                      value={orderComments}
-                      onChangeText={setOrderComments}
-                      textAlignVertical="top"
-                    />
-                  </View>
-                </View>
-
-                <View style={[styles.section, { marginTop: 10 }]}>
-                  <View style={styles.sectionHeader}>
-                    <View style={[styles.sectionIcon, { backgroundColor: currentTheme.primary + '15' }]}>
-                       <Truck size={18} color={currentTheme.primary} />
-                    </View>
-                    <Text style={styles.sectionTitle}>CONTACT DETAILS</Text>
-                  </View>
-                  
-                  <View style={styles.inputCard}>
-                    <Text style={styles.inputLabel}>Mobile Number for Confirmation</Text>
-                    <TextInput 
-                      placeholder="03XXXXXXXXX" 
-                      placeholderTextColor={COLORS.textSecondary}
-                      style={styles.phoneNumberInput}
-                      keyboardType="numeric"
-                      maxLength={11}
-                      value={accountNumber}
-                      onChangeText={setAccountNumber}
-                      returnKeyType="done"
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.securityNote}>
-                  <ShieldCheck color={currentTheme.primary} size={16} />
-                  <Text style={styles.securityText}>Authentic Madina Collar Quality Guaranteed</Text>
-                </View>
-              </Animated.View>
-            </ScrollView>
-          </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+    <SafeAreaView style={styles.container}>
+      <SuccessPopup />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><ChevronLeft color={COLORS.textPrimary} size={24} /></TouchableOpacity>
+        <View style={{ flex: 1, marginLeft: 15 }}><Text style={styles.headerTitle}>Order Summary</Text></View>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.addMore}><PlusCircle size={18} color={COLORS.accent} /><Text style={styles.addText}>ADD</Text></TouchableOpacity>
       </View>
-
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          activeOpacity={0.8}
-          style={[styles.payButton, { backgroundColor: currentTheme.primary, shadowColor: currentTheme.primary }, loading && { opacity: 0.7 }]} 
-          onPress={handlePayment}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.payButtonText}>PLACE YOUR ORDER</Text>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryTop}><Text style={styles.summaryLabel}>TOTAL PAYABLE</Text><TouchableOpacity onPress={() => setShowDetails(!showDetails)} style={styles.trayToggle}><Text style={styles.trayToggleText}>{showDetails ? 'Hide' : 'Show'}</Text>{showDetails ? <ChevronUp size={14} color={COLORS.accent} /> : <ChevronDown size={14} color={COLORS.accent} />}</TouchableOpacity></View>
+          <View style={styles.mainStats}><View><Text style={styles.statSub}>Total Volume</Text><Text style={styles.statVal}>{getTotalItems()} Pcs</Text></View><View style={{ alignItems: 'flex-end' }}><Text style={styles.statSub}>Total Amount</Text><Text style={styles.grandPrice}>Rs {totalAmount}</Text></View></View>
+          {showDetails && (
+            <Animated.View entering={FadeInDown} style={styles.itemTray}>{cartItemsList.map((item, idx) => (<View key={idx} style={styles.itemRow}><View style={{ flex: 1 }}><Text style={styles.itemTitle}>{item.quality} • {item.style}</Text><Text style={styles.itemMeta}>{item.category} • {item.color} {item.width ? `• W:${item.width}` : ''} • Size: {item.size}</Text></View><View style={{ alignItems: 'flex-end', marginRight: 15 }}><Text style={styles.itemQty}>{item.qty}x</Text><Text style={styles.itemRate}>@ {item.price}</Text></View><TouchableOpacity onPress={() => removeItem(item.key, item.size)}><Trash2 size={16} color={COLORS.error} /></TouchableOpacity></View>))}</Animated.View>
           )}
-        </TouchableOpacity>
-      </View>
-
-      <Modal visible={isSuccess} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <Animated.View style={[styles.successCard, { transform: [{ scale: modalScale }] }]}>
-            <View style={[styles.successIconWrapper, { backgroundColor: currentTheme.primary }]}>
-              <CheckCircle2 color="#FFF" size={50} />
-            </View>
-            <Text style={styles.successTitle}>Order Received!</Text>
-            <Text style={styles.successSubtitle}>Thank you for choosing Madina Collar. We'll be in touch very soon.</Text>
-            <TouchableOpacity 
-              activeOpacity={0.8}
-              style={[styles.closeButton, { backgroundColor: currentTheme.primary }]}
-              onPress={() => {
-                setIsSuccess(false);
-                navigation.navigate('Quality');
-              }}
-            >
-              <Text style={styles.closeButtonText}>CONTINUE SHOPPING</Text>
-            </TouchableOpacity>
-          </Animated.View>
         </View>
-      </Modal>
-    </View>
+        <View style={styles.inputGroup}><Text style={styles.inputLabel}>Bilti Details (Address / Phone)</Text><View style={[styles.inputField, { alignItems: 'flex-start', paddingTop: 15 }]}><Truck size={18} color={COLORS.accent} /><TextInput style={[styles.input, { height: 120, textAlignVertical: 'top' }]} placeholder="Enter Bilti info..." placeholderTextColor="#999" value={biltiInfo} onChangeText={setBiltiInfo} multiline /></View></View>
+      </ScrollView>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 25) }]}><TouchableOpacity style={styles.confirmBtn} onPress={handlePlaceOrder} disabled={loading || getTotalItems() === 0}><View style={styles.btnInner}><Text style={styles.btnText}>{loading ? 'PROCESSING...' : 'PLACE ORDER'}</Text>{!loading && <CheckCircle2 size={20} color="#FFF" />}</View></TouchableOpacity></View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: COLORS.background },
-  logoHeader: { alignItems: 'center', paddingTop: 69, height: 140 },
-  headerLogo: { width: 120, height: 120 },
-  navHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 25 },
-  iconCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', elevation: 4 },
-  contentContainer: { flex: 1, backgroundColor: COLORS.background, borderTopLeftRadius: 35, borderTopRightRadius: 35, marginTop: -35 },
-  scrollContent: { padding: 25, paddingBottom: 150 },
-  section: { marginBottom: 35 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  sectionIcon: { width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  sectionTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '900', letterSpacing: 1.5, opacity: 0.8 },
-  itemQuality: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900' },
-  itemDetailText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '600', marginTop: 3 },
-  itemBadge: { marginTop: 6, alignSelf: 'flex-start', backgroundColor: COLORS.surface, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  itemSizeSummary: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
-  itemPrice: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900', marginRight: 10 },
-  qualityGroup: { backgroundColor: '#FFFFFF', borderRadius: 25, marginBottom: 15, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)', elevation: 8 },
-  qualityHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
-  headerRight: { flexDirection: 'row', alignItems: 'center' },
-  expandedContent: { backgroundColor: COLORS.surface, paddingHorizontal: 20, paddingBottom: 18, borderTopWidth: 1, borderTopColor: '#F8F8F8' },
-  sizeBreakdown: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 },
-  breakdownText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '700' },
-  breakdownPrice: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
-  totalCard: { backgroundColor: COLORS.surface, borderRadius: 25, padding: 20, marginTop: 10 },
-  grandTotalLabel: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900' },
-  grandTotalValue: { fontSize: 26, fontWeight: '900' },
-  addMoreButton: { marginTop: 25, padding: 20, borderRadius: 20, borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', backgroundColor: '#FFF' },
-  addMoreText: { fontWeight: '900', fontSize: 14, letterSpacing: 1 },
-  inputCard: { backgroundColor: '#FFFFFF', padding: 25, borderRadius: 30, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)', elevation: 5 },
-  inputLabel: { color: COLORS.textPrimary, fontSize: 15, marginBottom: 15, fontWeight: '800' },
-  phoneNumberInput: { backgroundColor: COLORS.surface, color: COLORS.textPrimary, padding: 20, borderRadius: 18, fontSize: 20, fontWeight: '900', borderWidth: 1.5, borderColor: '#EEE', textAlign: 'center' },
-  commentInput: { backgroundColor: COLORS.surface, color: COLORS.textPrimary, padding: 15, borderRadius: 18, fontSize: 16, fontWeight: '600', borderWidth: 1.5, borderColor: '#EEE', minHeight: 100 },
-  securityNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 40, opacity: 0.6 },
-  securityText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '700' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 25, paddingBottom: Platform.OS === 'ios' ? 40 : 25, backgroundColor: COLORS.background },
-  payButton: { padding: 22, borderRadius: 25, alignItems: 'center', elevation: 15 },
-  payButtonText: { color: '#FFF', fontWeight: '900', fontSize: 18, letterSpacing: 1 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  successCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 40, padding: 40, alignItems: 'center' },
-  successIconWrapper: { width: 110, height: 110, borderRadius: 55, justifyContent: 'center', alignItems: 'center', marginBottom: 25 },
-  successTitle: { color: COLORS.textPrimary, fontSize: 28, fontWeight: '900' },
-  successSubtitle: { color: COLORS.textSecondary, textAlign: 'center', marginTop: 15, lineHeight: 24, fontWeight: '600', fontSize: 15 },
-  closeButton: { width: '100%', padding: 20, borderRadius: 20, marginTop: 40, alignItems: 'center' },
-  closeButtonText: { color: '#FFF', fontWeight: '900', fontSize: 16 },
+  container: { flex: 1, backgroundColor: '#FDFDFB' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 20 },
+  backBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', elevation: 4 },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: COLORS.textPrimary },
+  addMore: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, gap: 5 },
+  addText: { fontSize: 10, fontWeight: '900', color: COLORS.textPrimary },
+  scrollContent: { padding: 20 },
+  summaryCard: { backgroundColor: '#FFF', borderRadius: 30, padding: 25, elevation: 10, shadowColor: COLORS.primary, shadowOpacity: 0.1, marginBottom: 30 },
+  summaryTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  summaryLabel: { fontSize: 10, fontWeight: '900', color: COLORS.textSecondary, letterSpacing: 2 },
+  trayToggle: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.surface, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  trayToggleText: { fontSize: 10, fontWeight: '900', color: COLORS.accent },
+  mainStats: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  statSub: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  statVal: { fontSize: 18, fontWeight: '900', color: COLORS.textPrimary },
+  grandPrice: { fontSize: 30, fontWeight: '900', color: COLORS.accent },
+  itemTray: { marginTop: 25, borderTopWidth: 1, borderTopColor: '#F5F5F5', paddingTop: 15 },
+  itemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#FAFAFA' },
+  itemTitle: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary, textTransform: 'uppercase' },
+  itemMeta: { fontSize: 10, color: COLORS.textSecondary, marginTop: 2 },
+  itemQty: { fontSize: 14, fontWeight: '900', color: COLORS.primary },
+  itemRate: { fontSize: 9, color: '#CCC', fontWeight: 'bold' },
+  inputGroup: { gap: 12 },
+  inputLabel: { fontSize: 11, fontWeight: '900', color: COLORS.textSecondary, marginLeft: 5, textTransform: 'uppercase' },
+  inputField: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 18, paddingHorizontal: 15, borderWidth: 1, borderColor: '#EEE' },
+  input: { flex: 1, paddingVertical: 15, marginLeft: 10, fontWeight: '700', color: COLORS.textPrimary },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', padding: 25, borderTopLeftRadius: 40, borderTopRightRadius: 40, elevation: 30 },
+  confirmBtn: { backgroundColor: COLORS.primary, borderRadius: 25 },
+  btnInner: { height: 65, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  btnText: { color: '#FFF', fontWeight: '900', fontSize: 18, letterSpacing: 1 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  successCard: { backgroundColor: '#FFF', width: '100%', borderRadius: 40, padding: 30, alignItems: 'center' },
+  successIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  urduTitle: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 15 },
+  urduTextContainer: { width: '100%' },
+  urduParagraph: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 24, marginBottom: 8 },
+  slogan: { fontSize: 12, fontWeight: '900', color: COLORS.accent, textAlign: 'center', marginBottom: 25 },
+  closeBtn: { backgroundColor: COLORS.textPrimary, width: '100%', paddingVertical: 18, borderRadius: 15, alignItems: 'center' },
+  closeBtnText: { color: '#FFF', fontWeight: '900', fontSize: 13 }
 });
 
 export default ConfirmOrderScreen;
