@@ -1,0 +1,153 @@
+.container {
+  min-height: 100vh;
+  padding: 80px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top right, rgba(255, 215, 0, 0.15) 0%, rgba(252, 251, 247, 0) 50%),
+              radial-gradient(circle at bottom left, rgba(212, 175, 55, 0.1) 0%, rgba(252, 251, 247, 0) 50%),
+              var(--cream-bg);
+  animation: fadeIn 0.8s ease-out;
+}
+
+.hero {
+  width: min(900px, 100%);
+  padding: 64px 48px;
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-premium);
+  border: 1px solid var(--border-light);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gold-gradient);
+}
+
+.brand {
+  color: var(--metallic-gold);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+  opacity: 0.95;
+  text-shadow: 0 2px 4px rgba(212, 175, 55, 0.1);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+  line-height: 1.1;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  color: var(--dark-charcoal);
+  letter-spacing: -0.03em;
+}
+
+.title span {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.description {
+  max-width: 600px;
+  margin: 24px 0 40px;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  padding: 16px 36px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  transition: var(--transition-smooth);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.primaryButton {
+  background: var(--gold-gradient);
+  color: var(--dark-charcoal);
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25);
+}
+
+.primaryButton:hover {
+  background: var(--gold-gradient-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(212, 175, 55, 0.35);
+}
+
+.primaryButton:active {
+  transform: translateY(0);
+}
+
+.secondaryButton {
+  background: #ffffff;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-medium);
+}
+
+.secondaryButton:hover {
+  background: rgba(212, 175, 55, 0.05);
+  color: var(--dark-charcoal);
+  transform: translateY(-2px);
+  border-color: var(--metallic-gold);
+}
+
+.secondaryButton:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 40px 16px;
+  }
+
+  .hero {
+    padding: 48px 24px;
+    border-radius: 24px;
+  }
+  
+  .actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+  
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+    padding: 14px 28px;
+  }
+}
