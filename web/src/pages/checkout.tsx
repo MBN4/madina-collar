@@ -1,5 +1,10 @@
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, ChevronUp, PlusCircle, Truck, Trash2, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import { FieldTextarea } from "../components/ui/FieldInput";
 import PageShell from "../components/PageShell";
 import { useRequireAuth } from "../hooks/useRequireAuth";
 import { useAuthStore } from "../store/authStore";
@@ -29,6 +34,7 @@ export default function Checkout() {
   const [catalog, setCatalog] = useState<Quality[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [showDetails, setShowDetails] = useState(true);
 
   const cartItemsList = useMemo(() => {
     if (!catalog.length) return [];
@@ -140,69 +146,90 @@ export default function Checkout() {
   if (!isAuthenticated) return null;
 
   return (
-    <PageShell title="Checkout">
+    <PageShell title="">
       <div className={styles.checkoutShell}>
-        <div className={styles.heroCard}>
-          <div>
-            <div className={styles.heroTitle}>Ready to place your order?</div>
-            <p className={styles.heroText}>
-              The web checkout mirrors the mobile flow with the same cart
-              details and delivery step.
-            </p>
-          </div>
-          <div className={styles.heroAmount}>Rs {totalAmount}</div>
+        <div className={styles.headerRow}>
+          <h1 className={styles.headerTitle}>Order Summary</h1>
+          <Button
+            variant="ghost"
+            className={styles.addMore}
+            onClick={() => router.push("/catalog")}
+          >
+            <PlusCircle size={16} />
+            Add
+          </Button>
         </div>
 
         <div className={styles.checkoutGrid}>
-          <div className={styles.summaryPanel}>
-            <div className={styles.sectionHeading}>
-              <h2>Order Summary</h2>
-              <span>{totalItems} items selected</span>
+          <Card className={styles.summaryPanel}>
+            <div className={styles.summaryTop}>
+              <span className={styles.summaryLabel}>Total Payable</span>
+              <button className={styles.trayToggle} onClick={() => setShowDetails((v) => !v)}>
+                {showDetails ? "Hide" : "Show"}
+                {showDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
             </div>
-            <div className={styles.summaryHint}>
-              Your order is built from the same cart structure as the mobile app
-              and posted to the backend through the live API.
-            </div>
-            <div className={styles.list}>
-              {cartItemsList.map((item, index) => (
-                <div key={index} className={styles.itemRow}>
-                  <div className={styles.itemMain}>
-                    <p className={styles.itemTitle}>
-                      {item.quality} • {item.style}
-                    </p>
-                    <p className={styles.itemMeta}>
-                      {item.category} • {item.color}{" "}
-                      {item.width ? `• W:${item.width}` : ""} • Size:{" "}
-                      {item.size}
-                    </p>
-                  </div>
-                  <div className={styles.itemPricing}>
-                    <span>
-                      {item.qty} x Rs {item.price}
-                    </span>
-                    <button
-                      className={styles.removeButton}
-                      onClick={() => removeItem(item.key, item.size)}
-                    >
-                      Remove
-                    </button>
-                  </div>
+            <div className={styles.mainStats}>
+              <div>
+                <div className={styles.statSub}>Total Volume</div>
+                <div className={styles.statVal}>{totalItems} Pcs</div>
+              </div>
+              <div>
+                <div className={styles.statSub} style={{ textAlign: "right" }}>
+                  Total Amount
                 </div>
-              ))}
-              {!cartItemsList.length && (
-                <div className={styles.empty}>
-                  No items yet. Return to collections to add fabric selections.
-                </div>
-              )}
+                <div className={styles.grandAmount}>Rs {totalAmount}</div>
+              </div>
             </div>
-          </div>
 
-          <div className={styles.detailsPanel}>
-            <div className={styles.sectionHeading}>
-              <h2>Delivery Details</h2>
-              <span>Step 2</span>
-            </div>
-            <textarea
+            <AnimatePresence initial={false}>
+              {showDetails && (
+                <motion.div
+                  className={styles.itemTray}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  style={{ overflow: "hidden" }}
+                >
+                  {cartItemsList.map((item, index) => (
+                    <div key={index} className={styles.itemRow}>
+                      <div className={styles.itemMain}>
+                        <p className={styles.itemTitle}>
+                          {item.quality} • {item.style}
+                        </p>
+                        <p className={styles.itemMeta}>
+                          {item.category} • {item.color}{" "}
+                          {item.width ? `• W:${item.width}` : ""} • Size:{" "}
+                          {item.size}
+                        </p>
+                      </div>
+                      <div className={styles.itemPricing}>
+                        <span className={styles.itemQty}>{item.qty}x</span>
+                        <button
+                          className={styles.removeButton}
+                          onClick={() => removeItem(item.key, item.size)}
+                          aria-label="Remove item"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {!cartItemsList.length && (
+                    <div className={styles.empty}>
+                      No items yet. Return to collections to add fabric selections.
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Card>
+
+          <Card className={styles.detailsPanel}>
+            <div className={styles.inputLabel}>Bilti Details (Address / Phone)</div>
+            <FieldTextarea
+              icon={<Truck size={18} />}
               value={biltiInfo}
               onChange={(e) => setBiltiInfo(e.target.value)}
               placeholder="Bilti address / phone details"
@@ -216,14 +243,16 @@ export default function Checkout() {
               <strong>Rs {totalAmount}</strong>
             </div>
             {message && <div className={styles.message}>{message}</div>}
-            <button
+            <Button
+              fullWidth
               className={styles.placeButton}
               onClick={handlePlaceOrder}
               disabled={loading || !cartItemsList.length}
             >
-              {loading ? "Placing order..." : "Place Order"}
-            </button>
-          </div>
+              {loading ? "Processing..." : "Place Order"}
+              {!loading && <CheckCircle2 size={20} />}
+            </Button>
+          </Card>
         </div>
       </div>
     </PageShell>

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import Card from "../components/ui/Card";
+import Loader from "../components/ui/Loader";
 import PageShell from "../components/PageShell";
+import StaggerItem from "../components/ui/StaggerItem";
 import { useRequireAuth } from "../hooks/useRequireAuth";
 import styles from "../styles/Orders.module.css";
 import { Order } from "../types";
@@ -30,51 +33,53 @@ export default function Orders() {
         stays in sync with the mobile experience.
       </div>
       {loading ? (
-        <div className={styles.info}>Loading your orders...</div>
+        <Loader label="Loading your orders..." />
       ) : error ? (
         <div className={styles.error}>{error}</div>
       ) : orders.length === 0 ? (
         <div className={styles.info}>No past orders yet. Start shopping!</div>
       ) : (
         <div className={styles.orderGrid}>
-          {orders.map((order) => {
+          {orders.map((order, index) => {
             const statusClass =
               styles[order.status.toLowerCase() as keyof typeof styles] || "";
             return (
-              <div key={order.id} className={styles.orderCard}>
-                <div className={styles.orderHeader}>
-                  <div className={styles.orderHeaderInfo}>
-                    <h3>Order #{order.id}</h3>
-                    <p>{new Date(order.createdAt).toLocaleString()}</p>
-                  </div>
-                  <span className={`${styles.status} ${statusClass}`}>
-                    {order.status}
-                  </span>
-                </div>
-
-                <div className={styles.orderMeta}>
-                  <span>Rs {order.total_amount.toLocaleString()}</span>
-                  <span>{order.payment_method}</span>
-                </div>
-
-                <div className={styles.orderItems}>
-                  {order.items.map((item) => (
-                    <div key={item.id} className={styles.orderItem}>
-                      <p className={styles.orderItemTitle}>
-                        {item.quality} — {item.style}
-                      </p>
-                      <p className={styles.orderItemDetail}>
-                        {item.category} • {item.color}
-                        {item.width ? ` • Width: ${item.width}` : ""} • Size:{" "}
-                        {item.size}
-                      </p>
-                      <p className={styles.orderItemPrice}>
-                        {item.quantity} × Rs {item.price_at_purchase}
-                      </p>
+              <StaggerItem key={order.id} index={index} staggerMs={100} direction="up">
+                <Card className={styles.orderCard}>
+                  <div className={styles.orderHeader}>
+                    <div className={styles.orderHeaderInfo}>
+                      <h3>Order #{order.id}</h3>
+                      <p>{new Date(order.createdAt).toLocaleString()}</p>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <span className={`${styles.status} ${statusClass}`}>
+                      {order.status}
+                    </span>
+                  </div>
+
+                  <div className={styles.orderMeta}>
+                    <span>Rs {order.total_amount.toLocaleString()}</span>
+                    <span>{order.payment_method}</span>
+                  </div>
+
+                  <div className={styles.orderItems}>
+                    {order.items.map((item) => (
+                      <div key={item.id} className={styles.orderItem}>
+                        <p className={styles.orderItemTitle}>
+                          {item.quality} — {item.style}
+                        </p>
+                        <p className={styles.orderItemDetail}>
+                          {item.category} • {item.color}
+                          {item.width ? ` • Width: ${item.width}` : ""} • Size:{" "}
+                          {item.size}
+                        </p>
+                        <p className={styles.orderItemPrice}>
+                          {item.quantity} × Rs {item.price_at_purchase}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </StaggerItem>
             );
           })}
         </div>

@@ -1,9 +1,13 @@
+import { Check, ChevronDown, ChevronRight, ChevronUp, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import PageShell from "../components/PageShell";
+import Loader from "../components/ui/Loader";
+import StaggerItem from "../components/ui/StaggerItem";
 import { useRequireAuth } from "../hooks/useRequireAuth";
 import { useCartStore } from "../store/cartStore";
 import styles from "../styles/Product.module.css";
+import { DEFAULT_QUALITY_THEME, QUALITY_THEMES } from "../styles/theme";
 import { ProductAttribute, Quality } from "../types";
 import api, { getImageUrl } from "../utils/api";
 
@@ -27,6 +31,8 @@ export default function Product() {
     null,
   );
   const { updateQuantity, cart, getTotalItems } = useCartStore();
+
+  const currentTheme = (qualityName && QUALITY_THEMES[qualityName]) || DEFAULT_QUALITY_THEME;
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -137,8 +143,8 @@ export default function Product() {
   if (!isAuthenticated) return null;
   if (loading)
     return (
-      <PageShell title="Loading...">
-        <div className={styles.loadingState}>Loading product...</div>
+      <PageShell title="">
+        <Loader label="Syncing catalog..." />
       </PageShell>
     );
   if (error || !qualityData)
@@ -151,12 +157,9 @@ export default function Product() {
   return (
     <PageShell title={qualityData.name || "Product"}>
       <div className={styles.productShell}>
-        <div className={styles.heroCard}>
+        <div className={styles.heroCard} style={{ background: currentTheme.gradient }}>
           <div>
             <div className={styles.heroBadges}>
-              <span className={styles.heroPill}>
-                {qualityData.tag || "Premium"}
-              </span>
               <span className={styles.heroPillAlt}>Mobile-style flow</span>
             </div>
             <h2 className={styles.heroTitle}>{qualityData.name}</h2>
@@ -171,6 +174,7 @@ export default function Product() {
         <div className={styles.productGrid}>
           <div className={styles.imagePanel}>
             <div className={styles.tag}>{qualityData.tag || "Premium"}</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={getImageUrl(qualityData.image_url)}
               alt={qualityData.name}
@@ -178,13 +182,6 @@ export default function Product() {
           </div>
 
           <div className={styles.detailsPanel}>
-            <div className={styles.meta}>
-              Starting at Rs {qualityData.price}
-            </div>
-            <div className={styles.summaryCard}>
-              Choose the style, category, color, and width exactly like the
-              mobile flow, then set quantities for each size.
-            </div>
             <div className={styles.selectionSummary}>
               {selectedSummary || "Select a style to begin"}
             </div>
@@ -197,16 +194,15 @@ export default function Product() {
                 </span>
               </div>
               <div className={styles.buttonRow}>
-                {qualityData.Styles.map((style) => (
-                  <button
-                    key={style.id}
-                    className={
-                      style.name === selectedType ? styles.activeTab : ""
-                    }
-                    onClick={() => setSelectedType(style.name)}
-                  >
-                    {style.name}
-                  </button>
+                {qualityData.Styles.map((style, index) => (
+                  <StaggerItem key={style.id} index={index} staggerMs={150} direction="down">
+                    <button
+                      className={style.name === selectedType ? styles.activeTab : ""}
+                      onClick={() => setSelectedType(style.name)}
+                    >
+                      {style.name}
+                    </button>
+                  </StaggerItem>
                 ))}
               </div>
             </div>
@@ -252,7 +248,15 @@ export default function Product() {
                           onClick={() => setSelectedColor(color)}
                           title={color.value}
                           aria-label={color.value}
-                        />
+                        >
+                          {selectedColor?.id === color.id ? (
+                            <Check
+                              size={16}
+                              strokeWidth={4}
+                              color={color.value.toLowerCase() === "black" ? "#fff" : currentTheme.primary}
+                            />
+                          ) : null}
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -296,60 +300,74 @@ export default function Product() {
                 </div>
               ) : (
                 <div className={styles.sizeGrid}>
-                  {sizes.map((size) => {
+                  {sizes.map((size, index) => {
                     const price = getMatrixPrice(size.id);
                     const qty = cartKey ? cart[cartKey]?.[size.value] || 0 : 0;
                     const outOfStock = !size.in_stock;
                     return (
-                      <div
-                        key={size.id}
-                        className={`${styles.sizeCard} ${outOfStock ? styles.outOfStock : ""}`}
-                      >
-                        <div className={styles.sizeTop}>
-                          <span>{size.value}</span>
-                          <strong>Rs {price}</strong>
+                      <StaggerItem key={size.id} index={index} staggerMs={20} direction="right">
+                        <div
+                          className={`${styles.sizeCard} ${outOfStock ? styles.outOfStock : ""}`}
+                        >
+                          <div className={styles.sizeTop}>
+                            <span>Size {size.value}</span>
+                            <strong>Rs {price}</strong>
+                            {outOfStock ? (
+                              <div className={styles.outOfStockBadge}>
+                                Out of Stock
+                              </div>
+                            ) : null}
+                          </div>
+                          {!outOfStock && (
+                            <div className={styles.sizeBottom}>
+                              <input
+                                className={styles.qtyInput}
+                                type="text"
+                                inputMode="numeric"
+                                value={qty}
+                                onChange={(e) =>
+                                  handleManualInput(size.value, e.target.value)
+                                }
+                              />
+                              <div>
+                                <button onClick={() => handleAdjust(size.value, 1)} aria-label="Increase">
+                                  <ChevronUp size={16} strokeWidth={3} />
+                                </button>
+                                <button onClick={() => handleAdjust(size.value, -1)} aria-label="Decrease">
+                                  <ChevronDown size={16} strokeWidth={3} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        {outOfStock ? (
-                          <div className={styles.outOfStockBadge}>
-                            Out of Stock
-                          </div>
-                        ) : (
-                          <div className={styles.sizeBottom}>
-                            <button
-                              onClick={() => handleAdjust(size.value, -1)}
-                            >
-                              −
-                            </button>
-                            <input
-                              className={styles.qtyInput}
-                              type="text"
-                              inputMode="numeric"
-                              value={qty}
-                              onChange={(e) =>
-                                handleManualInput(size.value, e.target.value)
-                              }
-                            />
-                            <button onClick={() => handleAdjust(size.value, 1)}>
-                              +
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      </StaggerItem>
                     );
                   })}
                 </div>
               )}
             </div>
 
-            <button
-              className={styles.primaryAction}
-              onClick={() => router.push("/checkout")}
-              disabled={totalItems === 0}
-            >
-              {totalItems > 0
-                ? `Proceed to Checkout (${totalItems} items)`
-                : "Add items to continue"}
-            </button>
+            <div className={styles.footerBar}>
+              <div className={styles.footerData}>
+                <div className={styles.basketBadge}>
+                  <ShoppingBag size={12} />
+                  {totalItems} ITEMS
+                </div>
+                <div className={styles.grandPrice}>
+                  {totalItems > 0 ? `${totalItems} items selected` : "Add items to continue"}
+                </div>
+              </div>
+              <button
+                className={styles.primaryAction}
+                onClick={() => router.push("/checkout")}
+                disabled={totalItems === 0}
+              >
+                Proceed
+                <span className={styles.primaryActionIcon}>
+                  <ChevronRight size={20} color={currentTheme.primary} />
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

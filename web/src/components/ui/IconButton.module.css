@@ -1,0 +1,30 @@
+.iconBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  background: #fff;
+  border: 1px solid var(--border-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  color: var(--text-primary);
+  transition: var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.iconBtn:hover {
+  box-shadow: var(--shadow-card);
+  border-color: var(--border-medium);
+}
+
+.iconBtn:focus-visible {
+  outline: 2px solid var(--metallic-gold);
+  outline-offset: 2px;
+}
+
+.sm {
+  width: 36px;
+  height: 36px;
+}

@@ -41,9 +41,11 @@ export default function PageShell({ title, children }: Props) {
         </header>
       </div>
       <main className={styles.main}>
-        <div className={styles.titleRow}>
-          <h1>{title}</h1>
-        </div>
+        {title ? (
+          <div className={styles.titleRow}>
+            <h1>{title}</h1>
+          </div>
+        ) : null}
         {children}
       </main>
     </div>
