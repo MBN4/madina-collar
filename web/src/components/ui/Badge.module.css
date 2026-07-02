@@ -1,0 +1,31 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 15px;
+  border-radius: var(--radius-pill);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.solid {
+  background: var(--metallic-gold);
+  color: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.outline {
+  background: #fff;
+  color: var(--metallic-gold);
+  border: 1px solid var(--border-light);
+  padding: 4px 8px;
+  font-size: 0.6rem;
+}
+
+.surface {
+  background: var(--cream-surface);
+  color: var(--text-secondary);
+}

@@ -1,32 +1,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  /* Colors */
+  /* Colors — mirrors web/src/styles/theme.ts, sourced 1:1 from mobile/src/theme/colors.js */
   --primary-gold: #FFD700;
-  --metallic-gold: #D4AF37;
-  --dark-gold: #B8860B;
-  --cream-bg: #FCFBF7;
-  --cream-surface: #FFFDF0;
-  --dark-charcoal: #121213;
-  --text-primary: #1E1E1F;
-  --text-secondary: #5D463E;
-  --border-light: rgba(212, 175, 55, 0.15);
-  --border-medium: rgba(212, 175, 55, 0.3);
-  --error: #E53935;
-  
+  --metallic-gold: #FBC02D; /* COLORS.accent */
+  --dark-gold: #FFA000; /* premiumGradient third stop */
+  --cream-bg: #FFFFFF; /* COLORS.background */
+  --cream-surface: #FFFDE7; /* COLORS.surface */
+  --dark-charcoal: #1A1A1B; /* COLORS.textPrimary */
+  --text-primary: #1A1A1B;
+  --text-secondary: #5D4037; /* COLORS.textSecondary */
+  --border-light: rgba(93, 64, 55, 0.08);
+  --border-medium: rgba(93, 64, 55, 0.16);
+  --error: #FF5252;
+
   /* Gradients */
-  --gold-gradient: linear-gradient(135deg, #FFD700 0%, #D4AF37 50%, #B8860B 100%);
-  --gold-gradient-hover: linear-gradient(135deg, #FFE033 0%, #E2BE45 50%, #C99512 100%);
-  --cream-gradient: linear-gradient(180deg, #FFFDF0 0%, #FCFBF7 100%);
+  --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FBC02D 55%, #FFA000 100%); /* premiumGradient */
+  --gold-gradient-hover: linear-gradient(135deg, #FFE033 0%, #FDCB4C 55%, #FFB020 100%);
+  --cream-gradient: linear-gradient(160deg, #FFFDE7 0%, #FFD700 100%); /* yellowGradient */
   --dark-gradient: linear-gradient(135deg, #1A1A1B 0%, #121213 100%);
-  
-  /* Shadow / Blur (Glassmorphism) */
-  --shadow-premium: 0 20px 40px rgba(93, 70, 62, 0.06);
-  --shadow-hover: 0 30px 60px rgba(93, 70, 62, 0.12);
-  --glass-bg: rgba(255, 253, 240, 0.7);
+
+  /* Shadow / Blur (Glassmorphism — web-only affordance layered on mobile's elevation language) */
+  --shadow-premium: 0 20px 40px rgba(93, 64, 55, 0.06);
+  --shadow-hover: 0 30px 60px rgba(93, 64, 55, 0.12);
+  --shadow-soft: 0 3px 8px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-raised: 0 15px 30px rgba(0, 0, 0, 0.12);
+  --shadow-sheet: 0 -15px 30px rgba(0, 0, 0, 0.15);
+  --shadow-glow: 0 8px 20px rgba(255, 215, 0, 0.35);
+  --glass-bg: rgba(255, 253, 231, 0.72);
   --glass-blur: blur(16px);
-  --glass-border: 1px solid rgba(212, 175, 55, 0.2);
-  
+  --glass-border: 1px solid rgba(251, 192, 45, 0.2);
+
+  /* Radii — pill/bottom-sheet language from mobile */
+  --radius-pill: 9999px;
+  --radius-xl: 45px;
+  --radius-lg: 30px;
+  --radius-md: 20px;
+  --radius-sm: 15px;
+
   /* Transitions */
   --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   --transition-fast: all 0.15s ease;

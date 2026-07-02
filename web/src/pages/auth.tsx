@@ -1,8 +1,56 @@
+import { AnimatePresence, motion } from "framer-motion";
+import { Lock, Phone, User } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
+import Button from "../components/ui/Button";
+import { FieldInput } from "../components/ui/FieldInput";
 import { useAuthStore } from "../store/authStore";
 import styles from "../styles/Auth.module.css";
 import api from "../utils/api";
+
+const MARQUEE_LOGOS = [
+  "/images/anarkali.jpg",
+  "/images/angle.jpg",
+  "/images/madina-collar.jpg",
+  "/images/new-madina-collar.png",
+  "/images/pak.jpg",
+];
+
+function MarqueeRow({
+  duration,
+  reverse,
+}: {
+  duration: number;
+  reverse?: boolean;
+}) {
+  const items = [...MARQUEE_LOGOS, ...MARQUEE_LOGOS, ...MARQUEE_LOGOS, ...MARQUEE_LOGOS];
+  return (
+    <motion.div
+      className={styles.marqueeRow}
+      animate={{ x: reverse ? ["-50%", "0%"] : ["0%", "-50%"] }}
+      transition={{ duration, ease: "linear", repeat: Infinity }}
+    >
+      {items.map((src, index) => (
+        <motion.div
+          key={index}
+          className={`${styles.marqueeItem} ${index % 2 === 0 ? styles.offset : styles.unoffset}`}
+          animate={{ y: [10, -10] }}
+          transition={{
+            duration: 2.5 + (index % 3) * 0.4,
+            ease: "easeInOut",
+            repeat: Infinity,
+            repeatType: "mirror",
+          }}
+        >
+          <div className={styles.logoPod}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt="" />
+          </div>
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}
 
 const Auth = () => {
   const router = useRouter();
@@ -126,166 +174,164 @@ const Auth = () => {
     return "Secure Access";
   }, [isLogin, signupStep]);
 
+  const authSubtitle = useMemo(() => {
+    if (isLogin) return "Sign in to continue your journey.";
+    return `Step ${signupStep} of 3`;
+  }, [isLogin, signupStep]);
+
   return (
     <div className={styles.page}>
-      <div className={styles.card}>
-        <div className={styles.hero}>
-          <div className={styles.heroBadge}>Madina Collar</div>
-          <h1 className={styles.heroTitle}>{authTitle}</h1>
-          <p className={styles.subtitle}>
-            {isLogin
-              ? "Sign in to continue your premium fabric ordering journey."
-              : "Create your account and continue from where the mobile app left off."}
-          </p>
+      <div className={styles.marqueeBackground}>
+        <div className={`${styles.diagonalMarquee} ${styles.bottomLeftMarquee}`}>
+          <MarqueeRow duration={35} />
         </div>
+        <div className={`${styles.diagonalMarquee} ${styles.bottomRightMarquee}`}>
+          <MarqueeRow duration={45} reverse />
+        </div>
+      </div>
 
-        <div className={styles.form}>
-          {isLogin ? (
-            <>
-              <label className={styles.fieldLabel}>
-                Phone Number
-                <input
-                  className={styles.input}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="03XXXXXXXXX"
-                  maxLength={11}
-                />
-              </label>
-              <label className={styles.fieldLabel}>
-                Password
-                <input
-                  className={styles.input}
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                />
-              </label>
-              <button
-                className={styles.btn}
-                onClick={handleLogin}
-                disabled={loading}
+      <div className={styles.content}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${isLogin}-${signupStep}`}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 120, damping: 14 }}
+          >
+            <div className={styles.header}>
+              <motion.div
+                className={styles.logoContainer}
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 140, damping: 12 }}
               >
-                {loading ? "SIGNING IN..." : "SIGN IN"}
-              </button>
-            </>
-          ) : (
-            <>
-              {signupStep === 1 && (
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/madina-collar-round.png" alt="Madina Collar" />
+              </motion.div>
+              <h1 className={styles.title}>{authTitle}</h1>
+              <p className={styles.subtitle}>{authSubtitle}</p>
+            </div>
+
+            <div className={styles.form}>
+              {isLogin ? (
                 <>
-                  <label className={styles.fieldLabel}>
-                    Full Name
-                    <input
-                      className={styles.input}
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Your name"
-                    />
-                  </label>
-                  <label className={styles.fieldLabel}>
-                    Phone Number
-                    <input
-                      className={styles.input}
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="03XXXXXXXXX"
-                      maxLength={11}
-                    />
-                  </label>
-                </>
-              )}
-              {signupStep === 2 && (
-                <label className={styles.fieldLabel}>
-                  OTP Code
-                  <input
-                    className={styles.input}
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    placeholder="Enter 4-digit OTP"
-                    maxLength={6}
+                  <FieldInput
+                    icon={<Phone size={20} />}
+                    placeholder="Phone Number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    maxLength={11}
+                    inputMode="numeric"
                   />
-                </label>
-              )}
-              {signupStep === 3 && (
+                  <FieldInput
+                    icon={<Lock size={20} />}
+                    isPassword
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <Button fullWidth onClick={handleLogin} disabled={loading}>
+                    {loading ? "Signing In..." : "Sign In"}
+                  </Button>
+                </>
+              ) : (
                 <>
-                  <label className={styles.fieldLabel}>
-                    Password
-                    <input
-                      className={styles.input}
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Create a password"
-                    />
-                  </label>
-                  <label className={styles.fieldLabel}>
-                    Confirm Password
-                    <input
-                      className={styles.input}
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm your password"
-                    />
-                  </label>
+                  {signupStep === 1 && (
+                    <>
+                      <FieldInput
+                        icon={<User size={20} />}
+                        placeholder="Username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                      />
+                      <FieldInput
+                        icon={<Phone size={20} />}
+                        placeholder="Phone Number"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        maxLength={11}
+                        inputMode="numeric"
+                      />
+                    </>
+                  )}
+                  {signupStep === 2 && (
+                    <>
+                      <FieldInput
+                        isOtp
+                        placeholder="0000"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        maxLength={6}
+                        inputMode="numeric"
+                      />
+                      <div className={styles.otpTimer}>
+                        {timer > 0
+                          ? `Resend OTP in ${timer}s`
+                          : "OTP expired — go back and try again"}
+                      </div>
+                    </>
+                  )}
+                  {signupStep === 3 && (
+                    <>
+                      <FieldInput
+                        icon={<Lock size={20} />}
+                        isPassword
+                        placeholder="New Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                      <FieldInput
+                        icon={<Lock size={20} />}
+                        isPassword
+                        placeholder="Confirm Password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                    </>
+                  )}
+                  <Button
+                    fullWidth
+                    onClick={handleSignupFlow}
+                    disabled={loading || (signupStep === 2 && timer === 0)}
+                  >
+                    {loading ? "Processing..." : signupStep === 3 ? "Finish" : "Continue"}
+                  </Button>
+                  {signupStep > 1 && (
+                    <button
+                      className={styles.backButton}
+                      onClick={() => setSignupStep(signupStep - 1)}
+                    >
+                      ← Go Back
+                    </button>
+                  )}
                 </>
               )}
-              <button
-                className={styles.btn}
-                onClick={handleSignupFlow}
-                disabled={loading || (signupStep === 2 && timer === 0)}
-              >
-                {loading
-                  ? "PROCESSING..."
-                  : signupStep === 3
-                    ? "FINISH"
-                    : "CONTINUE"}
-              </button>
-              {signupStep > 1 && (
-                <button
-                  className={styles.secondaryAction}
-                  onClick={() => setSignupStep(signupStep - 1)}
-                >
-                  ← Go Back
-                </button>
+
+              {message && (
+                <div className={`${styles.message} ${isError ? styles.messageError : ""}`}>
+                  {message}
+                </div>
               )}
-            </>
-          )}
 
-          <div className={styles.switchRow}>
-            <span>
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
-            </span>
-            <button
-              type="button"
-              className={styles.switchBtn}
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setSignupStep(1);
-                setMsg("");
-              }}
-            >
-              {isLogin ? "Sign Up" : "Sign In"}
-            </button>
-          </div>
-
-          {message && (
-            <div
-              className={`${styles.message} ${isError ? styles.messageError : ""}`}
-            >
-              {message}
+              <div className={styles.switchRow}>
+                <span>
+                  {isLogin ? "Don't have an account?" : "Already have an account?"}
+                </span>
+                <button
+                  type="button"
+                  className={styles.switchBtn}
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setSignupStep(1);
+                    setMsg("");
+                  }}
+                >
+                  {isLogin ? "Sign Up" : "Sign In"}
+                </button>
+              </div>
             </div>
-          )}
-
-          {!isLogin && signupStep === 2 && (
-            <div className={styles.timer}>
-              {timer > 0
-                ? `OTP expires in ${timer}s`
-                : "OTP expired — go back and try again"}
-            </div>
-          )}
-        </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
