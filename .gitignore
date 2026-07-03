@@ -45,3 +45,5 @@ app-example
 
 web/.next/
 .next/
+.env
+web/design-audit/

@@ -261,7 +261,7 @@ const Auth = () => {
                         placeholder="0000"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
-                        maxLength={6}
+                        maxLength={4}
                         inputMode="numeric"
                       />
                       <div className={styles.otpTimer}>

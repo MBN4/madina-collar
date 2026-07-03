@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import api from "../utils/api";
 
 type User = {
   id: number;
@@ -14,7 +15,7 @@ type AuthState = {
   isAuthenticated: boolean;
   setAuth: (user: User, token: string) => void;
   checkAuth: () => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -38,8 +39,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     set({ token: null, user: null, isAuthenticated: false });
   },
-  logout: () => {
+  logout: async () => {
     if (typeof window !== "undefined") {
+      try {
+        await api.post("/auth/logout");
+      } catch (error) {
+        // token already invalid/expired or offline — still clear local session
+      }
       window.localStorage.removeItem("userToken");
       window.localStorage.removeItem("userData");
     }

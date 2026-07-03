@@ -201,10 +201,23 @@ router.put('/attributes/:id', auth, adminAuth, async (req, res) => {
   }
 });
 
+const PRICE_MATRIX_COLUMN_BY_ATTRIBUTE_TYPE = {
+  category: 'categoryId',
+  color: 'colorId',
+  width: 'widthId',
+  size: 'sizeId'
+};
+
 router.delete('/attributes/:id', auth, adminAuth, async (req, res) => {
   if (!isMaster(req)) return res.status(403).json({ msg: 'Forbidden' });
   try {
-    await ProductAttribute.destroy({ where: { id: req.params.id } });
+    const attr = await ProductAttribute.findByPk(req.params.id);
+    if (!attr) return res.status(404).json({ msg: 'Not found' });
+    const column = PRICE_MATRIX_COLUMN_BY_ATTRIBUTE_TYPE[attr.type];
+    if (column) {
+      await PriceMatrix.destroy({ where: { [column]: attr.id } });
+    }
+    await attr.destroy();
     res.json({ msg: 'Deleted successfully' });
   } catch (err) {
     res.status(500).send('Error');

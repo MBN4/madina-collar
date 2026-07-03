@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
+import api from '../utils/api';
 
 export const useAuthStore = create((set) => ({
   user: null,
@@ -31,6 +32,11 @@ export const useAuthStore = create((set) => ({
   },
 
   logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      // token already invalid/expired or offline — still clear local session
+    }
     await SecureStore.deleteItemAsync('userToken');
     await SecureStore.deleteItemAsync('userData');
     set({ user: null, token: null, isAuthenticated: false });

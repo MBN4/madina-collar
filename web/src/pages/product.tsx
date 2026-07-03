@@ -102,6 +102,47 @@ export default function Product() {
     return match ? Number(match.price) : 0;
   };
 
+  const totalPrice = useMemo(() => {
+    let total = 0;
+    Object.entries(cart).forEach(([key, sizesMap]) => {
+      if (!qualityName || !key.startsWith(qualityName)) return;
+      const parts = key.split("|");
+      const styleName = parts[1];
+      const catVal = parts[2];
+      const colVal = parts[3];
+      const widVal = parts[4] || null;
+      const styleObj = qualityData?.Styles?.find((s) => s.name === styleName);
+      if (!styleObj) return;
+      const catAttr = styleObj.ProductAttributes?.find(
+        (a) => a.type === "category" && a.value === catVal,
+      );
+      const colAttr = styleObj.ProductAttributes?.find(
+        (a) => a.type === "color" && a.value === colVal,
+      );
+      const widAttr = widVal
+        ? styleObj.ProductAttributes?.find(
+            (a) => a.type === "width" && a.value === widVal,
+          )
+        : null;
+      if (!catAttr || !colAttr) return;
+      Object.entries(sizesMap).forEach(([szVal, qty]) => {
+        const szAttr = styleObj.ProductAttributes?.find(
+          (a) => a.type === "size" && a.value === szVal,
+        );
+        if (!szAttr) return;
+        const match = styleObj.PriceMatrices?.find(
+          (p) =>
+            p.categoryId === catAttr.id &&
+            p.colorId === colAttr.id &&
+            (widAttr ? p.widthId === widAttr.id : true) &&
+            p.sizeId === szAttr.id,
+        );
+        total += (Number(match?.price) || 0) * qty;
+      });
+    });
+    return total;
+  }, [cart, qualityData, qualityName]);
+
   const cartKey = useMemo(() => {
     if (!qualityName || !selectedType || !selectedCategory || !selectedColor)
       return null;
@@ -354,7 +395,7 @@ export default function Product() {
                   {totalItems} ITEMS
                 </div>
                 <div className={styles.grandPrice}>
-                  {totalItems > 0 ? `${totalItems} items selected` : "Add items to continue"}
+                  {totalItems > 0 ? `Rs ${totalPrice}` : "Add items to continue"}
                 </div>
               </div>
               <button
