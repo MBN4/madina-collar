@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
+import PageShell from "../components/PageShell";
+import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import Loader from "../components/ui/Loader";
-import PageShell from "../components/PageShell";
 import StaggerItem from "../components/ui/StaggerItem";
 import { useRequireAuth } from "../hooks/useRequireAuth";
 import styles from "../styles/Orders.module.css";
-import Button from "../components/ui/Button";
-import { useRouter } from "next/router";
 import { Order } from "../types";
 import api from "../utils/api";
 
@@ -36,7 +35,9 @@ export default function Orders() {
           stays in sync with the mobile experience.
         </div>
         <div className={styles.actions}>
-          <Button onClick={() => router.push('/catalog')}>Place More Order</Button>
+          <Button onClick={() => router.push("/catalog")}>
+            Place More Order
+          </Button>
         </div>
       </div>
       {loading ? (
@@ -51,7 +52,12 @@ export default function Orders() {
             const statusClass =
               styles[order.status.toLowerCase() as keyof typeof styles] || "";
             return (
-              <StaggerItem key={order.id} index={index} staggerMs={100} direction="up">
+              <StaggerItem
+                key={order.id}
+                index={index}
+                staggerMs={100}
+                direction="up"
+              >
                 <Card className={styles.orderCard}>
                   <div className={styles.orderHeader}>
                     <div className={styles.orderHeaderInfo}>
