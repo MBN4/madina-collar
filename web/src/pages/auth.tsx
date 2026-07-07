@@ -23,7 +23,12 @@ function MarqueeRow({
   duration: number;
   reverse?: boolean;
 }) {
-  const items = [...MARQUEE_LOGOS, ...MARQUEE_LOGOS, ...MARQUEE_LOGOS, ...MARQUEE_LOGOS];
+  const items = [
+    ...MARQUEE_LOGOS,
+    ...MARQUEE_LOGOS,
+    ...MARQUEE_LOGOS,
+    ...MARQUEE_LOGOS,
+  ];
   return (
     <motion.div
       className={styles.marqueeRow}
@@ -181,7 +186,6 @@ const Auth = () => {
 
   return (
     <div className={styles.page}>
-
       <div className={styles.content}>
         <AnimatePresence mode="wait">
           <motion.div
@@ -198,7 +202,10 @@ const Auth = () => {
                 transition={{ type: "spring", stiffness: 140, damping: 12 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/images/madina-collar-round.png" alt="Madina Collar" />
+                <img
+                  src="/images/madina-collar-round.png"
+                  alt="Madina Collar"
+                />
               </motion.div>
               <h1 className={styles.title}>{authTitle}</h1>
               <p className={styles.subtitle}>{authSubtitle}</p>
@@ -286,7 +293,11 @@ const Auth = () => {
                     onClick={handleSignupFlow}
                     disabled={loading || (signupStep === 2 && timer === 0)}
                   >
-                    {loading ? "Processing..." : signupStep === 3 ? "Finish" : "Continue"}
+                    {loading
+                      ? "Processing..."
+                      : signupStep === 3
+                        ? "Finish"
+                        : "Continue"}
                   </Button>
                   {signupStep > 1 && (
                     <button
@@ -300,14 +311,18 @@ const Auth = () => {
               )}
 
               {message && (
-                <div className={`${styles.message} ${isError ? styles.messageError : ""}`}>
+                <div
+                  className={`${styles.message} ${isError ? styles.messageError : ""}`}
+                >
                   {message}
                 </div>
               )}
 
               <div className={styles.switchRow}>
                 <span>
-                  {isLogin ? "Don't have an account?" : "Already have an account?"}
+                  {isLogin
+                    ? "Don't have an account?"
+                    : "Already have an account?"}
                 </span>
                 <button
                   type="button"

@@ -5,6 +5,8 @@ import PageShell from "../components/PageShell";
 import StaggerItem from "../components/ui/StaggerItem";
 import { useRequireAuth } from "../hooks/useRequireAuth";
 import styles from "../styles/Orders.module.css";
+import Button from "../components/ui/Button";
+import { useRouter } from "next/router";
 import { Order } from "../types";
 import api from "../utils/api";
 
@@ -28,9 +30,14 @@ export default function Orders() {
 
   return (
     <PageShell title="Order History">
-      <div className={styles.summaryCard}>
-        Your past orders are fetched directly from the backend so the web app
-        stays in sync with the mobile experience.
+      <div className={styles.summaryRow}>
+        <div className={styles.summaryCard}>
+          Your past orders are fetched directly from the backend so the web app
+          stays in sync with the mobile experience.
+        </div>
+        <div className={styles.actions}>
+          <Button onClick={() => router.push('/catalog')}>Place More Order</Button>
+        </div>
       </div>
       {loading ? (
         <Loader label="Loading your orders..." />

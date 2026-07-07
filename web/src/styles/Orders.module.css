@@ -10,6 +10,23 @@
   line-height: 1.6;
 }
 
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+}
+
+.actions .btn {
+  min-width: 180px;
+}
+
 .orderGrid {
   display: flex;
   flex-direction: column;
