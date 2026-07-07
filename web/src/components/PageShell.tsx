@@ -24,7 +24,6 @@ export default function PageShell({ title, children }: Props) {
           </Link>
           <nav className={styles.nav}>
             <Link href="/catalog">Collections</Link>
-            <Link href="/orders">Orders</Link>
             <Link href="/orders">Order History</Link>
             {isAuthenticated ? (
               <button className={styles.linkButton} onClick={logout}>
