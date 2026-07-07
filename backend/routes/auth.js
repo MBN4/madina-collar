@@ -16,6 +16,10 @@ router.post('/register/step1', async (req, res) => {
     const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
     const expiresAt = new Date(Date.now() + 60 * 1000);
     await Otp.create({ phone, otp_code: otpCode, expires_at: expiresAt });
+    // For local development, log the OTP so it can be read in the backend terminal.
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`DEV OTP for ${phone}: ${otpCode}`);
+    }
     res.json({ msg: 'OTP sent to WhatsApp' });
   } catch (err) {
     res.status(500).send('Server error');
@@ -105,23 +109,25 @@ router.post('/login', async (req, res) => {
     if (!user) return res.status(400).json({ msg: 'Invalid Credentials' });
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: 'Invalid Credentials' });
-    const token = jwt.sign(
-      { id: user.id, role: user.role }, 
-      process.env.JWT_SECRET, 
-      { expiresIn: '7d' }
-    );
-    res.json({ 
-      token, 
-      user: { 
-        id: user.id, 
-        username: user.username, 
+
+    // Use a development fallback when JWT_SECRET is not provided to avoid
+    // throwing during local testing. Replace with a strong secret in prod.
+    const jwtSecret = process.env.JWT_SECRET || 'dev_secret_change_me';
+    const token = jwt.sign({ id: user.id, role: user.role }, jwtSecret, { expiresIn: '7d' });
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
         email: user.email,
         phone: user.phone,
-        role: user.role 
-      } 
+        role: user.role,
+      },
     });
   } catch (err) {
-    res.status(500).send('Server error');
+    console.error('Auth login error:', err);
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 

@@ -181,14 +181,6 @@ const Auth = () => {
 
   return (
     <div className={styles.page}>
-      <div className={styles.marqueeBackground}>
-        <div className={`${styles.diagonalMarquee} ${styles.bottomLeftMarquee}`}>
-          <MarqueeRow duration={35} />
-        </div>
-        <div className={`${styles.diagonalMarquee} ${styles.bottomRightMarquee}`}>
-          <MarqueeRow duration={45} reverse />
-        </div>
-      </div>
 
       <div className={styles.content}>
         <AnimatePresence mode="wait">

@@ -25,13 +25,13 @@
 }
 
 .bottomLeftMarquee {
-  bottom: 6%;
+  bottom: -8%;
   left: -70vw;
   transform: rotate(-12deg);
 }
 
 .bottomRightMarquee {
-  bottom: -6%;
+  bottom: -8%;
   right: -70vw;
   transform: rotate(12deg);
 }
@@ -42,42 +42,39 @@
   width: max-content;
 }
 
+
+
 .marqueeItem {
-  margin: 0 25px;
+  margin: 0 18px;
 }
-
 .marqueeItem.offset {
-  margin-top: -20px;
+  margin-top: -12px;
 }
-
 .marqueeItem.unoffset {
-  margin-top: 20px;
+  margin-top: 12px;
 }
-
 .logoPod {
-  width: 90px;
-  height: 90px;
+  width: 72px;
+  height: 72px;
   background: #ffffff;
   border-radius: 50%;
-  padding: 15px;
+  padding: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-raised);
   border: 1px solid rgba(255, 255, 255, 0.8);
 }
-
 .logoPod img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  opacity: 0.9;
+  opacity: 0.95;
 }
-
-/* ---- Foreground card ---- */
+/* Foreground card container */
 .content {
   position: relative;
-  z-index: 1;
+  z-index: 5;
   width: min(440px, 100%);
 }
 
@@ -198,7 +195,7 @@
 
 @media (max-width: 520px) {
   .logoPod {
-    width: 70px;
-    height: 70px;
+    width: 60px;
+    height: 60px;
   }
 }

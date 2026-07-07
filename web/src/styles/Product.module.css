@@ -111,6 +111,21 @@
   box-shadow: var(--shadow-soft);
 }
 
+/* Keep the left image panel visually fixed while the right side scrolls. */
+.imagePanel {
+  position: sticky;
+  top: 84px; /* leave space for page header — adjust as needed */
+}
+
+.imagePanel img {
+  position: relative;
+  z-index: 1;
+}
+
+.tag {
+  z-index: 5; /* ensure tag sits above the logo */
+}
+
 .imagePanel img {
   width: 85%;
   max-height: 380px;
