@@ -1,0 +1,4 @@
+[submodule "mc-admin-panel"]
+	path = mc-admin-panel
+	url = https://github.com/MBN4/mc-admin-panel.git
+	branch = fix/admin-panel-bugs

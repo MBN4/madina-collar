@@ -297,7 +297,7 @@ router.post('/staff', auth, async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(req.body.password, salt);
     const staff = await User.create({ ...req.body, password: hash, role: 'admin' });
-    res.json(staff);
+    res.json({ id: staff.id, username: staff.username, email: staff.email, role: staff.role, createdAt: staff.createdAt });
   } catch (err) {
     res.status(500).send('Error');
   }
@@ -319,6 +319,32 @@ router.get('/users', auth, adminAuth, async (req, res) => {
     res.json(users);
   } catch (err) {
     res.status(500).send('Error');
+  }
+});
+
+router.put('/users/:id', auth, adminAuth, async (req, res) => {
+  try {
+    const { username, email, phone } = req.body;
+    const user = await User.findOne({ where: { id: req.params.id, role: 'user' } });
+    if (!user) return res.status(404).json({ msg: 'Not found' });
+    user.username = username ?? user.username;
+    user.email = email ?? user.email;
+    user.phone = phone ?? user.phone;
+    await user.save();
+    res.json({ id: user.id, username: user.username, email: user.email, phone: user.phone, createdAt: user.createdAt });
+  } catch (err) {
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+router.delete('/users/:id', auth, adminAuth, async (req, res) => {
+  try {
+    const user = await User.findOne({ where: { id: req.params.id, role: 'user' } });
+    if (!user) return res.status(404).json({ msg: 'Not found' });
+    await user.destroy();
+    res.json({ msg: 'Deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ msg: 'Server Error' });
   }
 });
 
