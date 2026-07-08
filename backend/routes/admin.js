@@ -46,12 +46,20 @@ router.get('/analytics', auth, adminAuth, async (req, res) => {
   try {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const revenueData = await Order.findAll({
+    const rawRevenueData = await Order.findAll({
       attributes: [[Sequelize.fn('DATE', Sequelize.col('createdAt')), 'date'], [Sequelize.fn('SUM', Sequelize.col('total_amount')), 'revenue']],
       where: { createdAt: { [Op.gte]: sevenDaysAgo } },
       group: [Sequelize.fn('DATE', Sequelize.col('createdAt'))],
       order: [[Sequelize.fn('DATE', Sequelize.col('createdAt')), 'ASC']]
     });
+    const revenueByDate = new Map(rawRevenueData.map(r => [r.get('date'), Number(r.get('revenue'))]));
+    const revenueData = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      revenueData.push({ date: dateStr, revenue: revenueByDate.get(dateStr) || 0 });
+    }
     const qualityData = await OrderItem.findAll({
       attributes: ['quality', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
       group: ['quality'],
