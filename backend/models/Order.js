@@ -8,7 +8,10 @@ const Order = sequelize.define('Order', {
   payment_method: { type: DataTypes.STRING, allowNull: false },
   bilti_info: { type: DataTypes.TEXT, allowNull: true },
   comments: { type: DataTypes.TEXT, allowNull: true },
-  status: { type: DataTypes.STRING, defaultValue: 'pending' }
+  status: { type: DataTypes.STRING, defaultValue: 'pending' },
+  // Set when the order is marked 'delivered', cleared if moved back. Drives the
+  // Revenue Trend chart (realized revenue by delivery date), not createdAt.
+  deliveredAt: { type: DataTypes.DATE, allowNull: true }
 }, { timestamps: true });
 
 Order.belongsTo(User, { foreignKey: 'userId' });

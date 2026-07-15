@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Eye, EyeOff, Lock, Phone, User } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert, Animated,
   Dimensions,
   Easing,
@@ -102,6 +103,7 @@ const AuthScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [timer, setTimer] = useState(60);
   const [isTimerActive, setIsTimerActive] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const entranceAnim = useRef(new Animated.Value(0)).current;
   const formAnim = useRef(new Animated.Value(50)).current;
@@ -127,23 +129,29 @@ const AuthScreen = () => {
   }, [isTimerActive, timer]);
 
   const handleSignupFlow = async () => {
+    if (loading) return;
+    if (signupStep === 1) {
+      if (!username || !phone) return Alert.alert("Error", "Please enter all details");
+      if (phone.length !== 11) return Alert.alert("Error", "Phone number must be exactly 11 digits");
+    } else if (signupStep === 2) {
+      if (otp.length < 4) return Alert.alert("Error", "Enter valid OTP");
+    } else if (password !== confirmPassword) {
+      return Alert.alert("Error", "Passwords do not match");
+    }
+    setLoading(true);
     try {
       if (signupStep === 1) {
-        if (!username || !phone) return Alert.alert("Error", "Please enter all details");
-        if (phone.length !== 11) return Alert.alert("Error", "Phone number must be exactly 11 digits");
         await api.post('/auth/register/step1', { username, phone });
         setSignupStep(2);
         setTimer(60);
         setIsTimerActive(true);
-      } 
+      }
       else if (signupStep === 2) {
-        if (otp.length < 4) return Alert.alert("Error", "Enter valid OTP");
         await api.post('/auth/register/step2', { phone, otp });
         setSignupStep(3);
         setIsTimerActive(false);
-      } 
+      }
       else {
-        if (password !== confirmPassword) return Alert.alert("Error", "Passwords do not match");
         await api.post('/auth/register/step3', { username, phone, password });
         Alert.alert("Success", "Registration complete! Please Sign In.");
         setIsLogin(true);
@@ -151,17 +159,24 @@ const AuthScreen = () => {
       }
     } catch (err) {
       Alert.alert("Error", err.response?.data?.msg || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleLogin = async () => {
+    if (loading) return;
     if (!phone || !password) return Alert.alert("Error", "All fields are required");
     if (phone.length !== 11) return Alert.alert("Error", "Phone number must be exactly 11 digits");
+    setLoading(true);
     try {
       const res = await api.post('/auth/login', { phone, password });
       await setAuth(res.data.user, res.data.token);
+      // On success the navigator swaps to the app stack and this screen unmounts,
+      // so there's no need to reset loading here.
     } catch (err) {
       Alert.alert("Error", err.response?.data?.msg || "Invalid Credentials");
+      setLoading(false);
     }
   };
 
@@ -177,8 +192,12 @@ const AuthScreen = () => {
     <LinearGradient colors={COLORS.yellowGradient} style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
-      {/* Background Diagonal Marquees */}
-      <View style={styles.marqueeBackground}>
+      {/* Background Diagonal Marquees — purely decorative.
+          pointerEvents="none" lets all taps fall through to the form; without it
+          the high-elevation logo pods (Android stacks by elevation) sit above the
+          Sign In button / eye toggle and swallow their touches. Mirrors the web
+          app's `.marqueeBackground { pointer-events: none }`. */}
+      <View style={styles.marqueeBackground} pointerEvents="none">
         <View style={[styles.diagonalMarquee, styles.bottomLeftMarquee]}>
           <MarqueeRow logos={MARQUEE_LOGOS} duration={35000} />
         </View>
@@ -214,8 +233,12 @@ const AuthScreen = () => {
                     />
                   </View>
                   <PasswordInput placeholder="Password" value={password} onChangeText={setPassword} />
-                  <TouchableOpacity activeOpacity={0.8} style={styles.mainButton} onPress={handleLogin}>
-                    <Text style={styles.buttonText}>SIGN IN</Text>
+                  <TouchableOpacity activeOpacity={0.8} style={[styles.mainButton, loading && styles.mainButtonDisabled]} onPress={handleLogin} disabled={loading}>
+                    {loading ? (
+                      <ActivityIndicator color={COLORS.textPrimary} />
+                    ) : (
+                      <Text style={styles.buttonText}>SIGN IN</Text>
+                    )}
                   </TouchableOpacity>
                 </>
               ) : (
@@ -244,8 +267,12 @@ const AuthScreen = () => {
                       <PasswordInput placeholder="Confirm Password" value={confirmPassword} onChangeText={setConfirmPassword} />
                     </>
                   )}
-                  <TouchableOpacity activeOpacity={0.8} style={[styles.mainButton, (signupStep === 2 && timer === 0) && { opacity: 0.5 }]} onPress={handleSignupFlow} disabled={signupStep === 2 && timer === 0}>
-                    <Text style={styles.buttonText}>{signupStep === 3 ? 'FINISH' : 'CONTINUE'}</Text>
+                  <TouchableOpacity activeOpacity={0.8} style={[styles.mainButton, ((signupStep === 2 && timer === 0) || loading) && styles.mainButtonDisabled]} onPress={handleSignupFlow} disabled={(signupStep === 2 && timer === 0) || loading}>
+                    {loading ? (
+                      <ActivityIndicator color={COLORS.textPrimary} />
+                    ) : (
+                      <Text style={styles.buttonText}>{signupStep === 3 ? 'FINISH' : 'CONTINUE'}</Text>
+                    )}
                   </TouchableOpacity>
                   {signupStep > 1 && (
                      <TouchableOpacity onPress={() => setSignupStep(signupStep - 1)} style={styles.backButton}><Text style={styles.backButtonText}>Go Back</Text></TouchableOpacity>
@@ -336,6 +363,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 15,
   },
+  mainButtonDisabled: { opacity: 0.6 },
   buttonText: { color: COLORS.textPrimary, fontWeight: '900', fontSize: 18, letterSpacing: 1.5 },
   backButton: { marginTop: 20, padding: 10 },
   backButtonText: { color: COLORS.textSecondary, textAlign: 'center', fontWeight: '700' },
@@ -380,7 +408,9 @@ const styles = StyleSheet.create({
     padding: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 20,
+    // No Android elevation: this is a background decoration and elevation would
+    // stack it above the form controls. iOS shadow props are harmless here.
+    elevation: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15,

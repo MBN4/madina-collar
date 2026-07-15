@@ -1,3 +1,7 @@
+// Must be the very first import — required by @react-navigation/stack for
+// gesture/animation handling on native (Android/iOS). Missing this causes
+// subtle touch/navigation glitches.
+import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 import App from './App';
 

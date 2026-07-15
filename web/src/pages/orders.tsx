@@ -1,3 +1,4 @@
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import PageShell from "../components/PageShell";
 import Button from "../components/ui/Button";
@@ -10,6 +11,7 @@ import { Order } from "../types";
 import api from "../utils/api";
 
 export default function Orders() {
+  const router = useRouter();
   const isAuthenticated = useRequireAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);

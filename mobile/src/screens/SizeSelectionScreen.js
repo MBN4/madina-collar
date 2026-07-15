@@ -25,7 +25,7 @@ import {
   Check, 
   Layers 
 } from 'lucide-react-native';
-import axios from 'axios';
+import api from '../utils/api';
 import { COLORS, QUALITY_THEMES } from '../theme/colors';
 import { useCartStore } from '../store/useCartStore';
 
@@ -46,7 +46,7 @@ const SizeSelectionScreen = ({ route, navigation }) => {
   const fetchStructure = async (isRefreshing = false) => {
     if (!isRefreshing) setLoading(true);
     try {
-      const res = await axios.get('http://192.168.18.18:5000/api/admin/qualities');
+      const res = await api.get('/admin/qualities');
       const found = res.data.find(q => q.id === qualityId);
       setQualityData(found);
     } catch (err) {

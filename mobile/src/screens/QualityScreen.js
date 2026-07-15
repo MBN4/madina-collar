@@ -21,7 +21,7 @@ import {
   RefreshCcw,
   Layers
 } from 'lucide-react-native';
-import axios from 'axios';
+import api, { getImageUrl } from '../utils/api';
 import { COLORS } from '../theme/colors';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -41,10 +41,10 @@ const QualityScreen = ({ navigation }) => {
     if (!isRefreshing) setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('http://192.168.18.18:5000/api/admin/qualities', {
-        timeout: 10000 
+      const response = await api.get('/admin/qualities', {
+        timeout: 10000
       });
-      
+
       const data = response.data;
       setQualities(data);
       
@@ -109,7 +109,7 @@ const QualityScreen = ({ navigation }) => {
           ) : null}
           <View style={styles.imageContainer}>
              {hasImage ? (
-                <Image source={{ uri: item.image_url.replace('localhost', '192.168.18.18') }} style={styles.cardImage} resizeMode="contain" />
+                <Image source={{ uri: getImageUrl(item.image_url) }} style={styles.cardImage} resizeMode="contain" />
              ) : (
                 <Layers size={30} color={COLORS.accent} opacity={0.2} />
              )}

@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { 
   ChevronLeft, CheckCircle2, ChevronDown, ChevronUp, PlusCircle, Trash2, ArrowRight, Truck
 } from 'lucide-react-native';
-import axios from 'axios';
+import api from '../utils/api';
 import { COLORS } from '../theme/colors';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -16,7 +16,7 @@ import { useAuthStore } from '../store/useAuthStore';
 const ConfirmOrderScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { cart, getTotalItems, removeItem, resetCart } = useCartStore();
-  const { token, logout } = useAuthStore();
+  const { logout } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [catalog, setCatalog] = useState([]);
   const [showDetails, setShowDetails] = useState(true);
@@ -26,7 +26,7 @@ const ConfirmOrderScreen = ({ navigation }) => {
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
-        const res = await axios.get('http://192.168.18.18:5000/api/admin/qualities');
+        const res = await api.get('/admin/qualities');
         setCatalog(res.data);
       } catch (err) { console.log("Catalog Error"); }
     };
@@ -64,9 +64,9 @@ const ConfirmOrderScreen = ({ navigation }) => {
     if (!biltiInfo) return Alert.alert("Required", "Please enter Bilti information.");
     setLoading(true);
     try {
-      await axios.post('http://192.168.18.18:5000/api/orders/place', {
+      await api.post('/orders/place', {
         cartItems: cartItemsList, totalAmount, paymentMethod: 'Transfer / Cash', biltiInfo
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       setLoading(false);
       resetCart();
       setShowSuccess(true);

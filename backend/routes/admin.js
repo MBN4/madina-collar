@@ -44,17 +44,21 @@ router.get('/dashboard-stats', auth, adminAuth, async (req, res) => {
 
 router.get('/analytics', auth, adminAuth, async (req, res) => {
   try {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Realized revenue: only DELIVERED orders, plotted by their delivery date,
+    // over the last 30 days.
+    const WINDOW_DAYS = 30;
+    const windowStart = new Date();
+    windowStart.setHours(0, 0, 0, 0);
+    windowStart.setDate(windowStart.getDate() - (WINDOW_DAYS - 1));
     const rawRevenueData = await Order.findAll({
-      attributes: [[Sequelize.fn('DATE', Sequelize.col('createdAt')), 'date'], [Sequelize.fn('SUM', Sequelize.col('total_amount')), 'revenue']],
-      where: { createdAt: { [Op.gte]: sevenDaysAgo } },
-      group: [Sequelize.fn('DATE', Sequelize.col('createdAt'))],
-      order: [[Sequelize.fn('DATE', Sequelize.col('createdAt')), 'ASC']]
+      attributes: [[Sequelize.fn('DATE', Sequelize.col('deliveredAt')), 'date'], [Sequelize.fn('SUM', Sequelize.col('total_amount')), 'revenue']],
+      where: { status: 'delivered', deliveredAt: { [Op.gte]: windowStart } },
+      group: [Sequelize.fn('DATE', Sequelize.col('deliveredAt'))],
+      order: [[Sequelize.fn('DATE', Sequelize.col('deliveredAt')), 'ASC']]
     });
     const revenueByDate = new Map(rawRevenueData.map(r => [r.get('date'), Number(r.get('revenue'))]));
     const revenueData = [];
-    for (let i = 6; i >= 0; i--) {
+    for (let i = WINDOW_DAYS - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().slice(0, 10);
@@ -97,6 +101,13 @@ router.put('/orders/:id/status', auth, adminAuth, async (req, res) => {
     const order = await Order.findByPk(req.params.id);
     if (!order) return res.status(404).json({ msg: 'Not found' });
     order.status = status;
+    // Track when the order was delivered so revenue can be plotted by delivery
+    // date. Preserve an existing delivery date; clear it if it leaves 'delivered'.
+    if (status === 'delivered') {
+      order.deliveredAt = order.deliveredAt || new Date();
+    } else {
+      order.deliveredAt = null;
+    }
     await order.save();
     res.json(order);
   } catch (err) {
