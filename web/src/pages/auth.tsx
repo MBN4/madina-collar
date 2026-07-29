@@ -61,14 +61,10 @@ const Auth = () => {
   const router = useRouter();
   const { isAuthenticated, setAuth, checkAuth } = useAuthStore();
   const [isLogin, setIsLogin] = useState(true);
-  const [signupStep, setSignupStep] = useState(1);
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [timer, setTimer] = useState(60);
-  const [isTimerActive, setIsTimerActive] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -83,17 +79,6 @@ const Auth = () => {
     }
   }, [isAuthenticated, router]);
 
-  useEffect(() => {
-    let interval: number | undefined;
-    if (isTimerActive && timer > 0) {
-      interval = window.setInterval(() => setTimer((t) => t - 1), 1000);
-    } else if (timer === 0) {
-      setIsTimerActive(false);
-      window.clearInterval(interval);
-    }
-    return () => window.clearInterval(interval);
-  }, [isTimerActive, timer]);
-
   const setMsg = (text: string, error = false) => {
     setMessage(text);
     setIsError(error);
@@ -101,52 +86,19 @@ const Auth = () => {
 
   const handleSignupFlow = async () => {
     setMsg("");
-    if (signupStep === 1) {
-      if (!username || !phone) return setMsg("Please enter all details", true);
-      if (phone.length !== 11)
-        return setMsg("Phone number must be exactly 11 digits", true);
-      setLoading(true);
-      try {
-        await api.post("/auth/register/step1", { username, phone });
-        setSignupStep(2);
-        setTimer(60);
-        setIsTimerActive(true);
-        setMsg("OTP sent to WhatsApp");
-      } catch (err: any) {
-        setMsg(err.response?.data?.msg || "Something went wrong", true);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    if (signupStep === 2) {
-      if (otp.length < 4) return setMsg("Enter valid OTP", true);
-      setLoading(true);
-      try {
-        await api.post("/auth/register/step2", { phone, otp });
-        setSignupStep(3);
-        setIsTimerActive(false);
-        setMsg("OTP verified successfully");
-      } catch (err: any) {
-        setMsg(err.response?.data?.msg || "Something went wrong", true);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
+    if (!username || !phone || !password || !confirmPassword)
+      return setMsg("Please enter all details", true);
+    if (phone.length !== 11)
+      return setMsg("Phone number must be exactly 11 digits", true);
     if (password !== confirmPassword)
       return setMsg("Passwords do not match", true);
     setLoading(true);
     try {
-      await api.post("/auth/register/step3", { username, phone, password });
+      await api.post("/auth/register", { username, phone, password });
       setMsg("Registration complete! Please sign in.");
       setIsLogin(true);
-      setSignupStep(1);
       setUsername("");
       setPhone("");
-      setOtp("");
       setPassword("");
       setConfirmPassword("");
     } catch (err: any) {
@@ -172,24 +124,25 @@ const Auth = () => {
     }
   };
 
-  const authTitle = useMemo(() => {
-    if (isLogin) return "Authentic Choice";
-    if (signupStep === 1) return "Join the Elite";
-    if (signupStep === 2) return "OTP Verification";
-    return "Secure Access";
-  }, [isLogin, signupStep]);
+  const authTitle = useMemo(
+    () => (isLogin ? "Authentic Choice" : "Join the Elite"),
+    [isLogin],
+  );
 
-  const authSubtitle = useMemo(() => {
-    if (isLogin) return "Sign in to continue your journey.";
-    return `Step ${signupStep} of 3`;
-  }, [isLogin, signupStep]);
+  const authSubtitle = useMemo(
+    () =>
+      isLogin
+        ? "Sign in to continue your journey."
+        : "Create your account to get started.",
+    [isLogin],
+  );
 
   return (
     <div className={styles.page}>
       <div className={styles.content}>
         <AnimatePresence mode="wait">
           <motion.div
-            key={`${isLogin}-${signupStep}`}
+            key={`${isLogin}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 120, damping: 14 }}
@@ -235,78 +188,41 @@ const Auth = () => {
                 </>
               ) : (
                 <>
-                  {signupStep === 1 && (
-                    <>
-                      <FieldInput
-                        icon={<User size={20} />}
-                        placeholder="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                      />
-                      <FieldInput
-                        icon={<Phone size={20} />}
-                        placeholder="Phone Number"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        maxLength={11}
-                        inputMode="numeric"
-                      />
-                    </>
-                  )}
-                  {signupStep === 2 && (
-                    <>
-                      <FieldInput
-                        isOtp
-                        placeholder="0000"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        maxLength={4}
-                        inputMode="numeric"
-                      />
-                      <div className={styles.otpTimer}>
-                        {timer > 0
-                          ? `Resend OTP in ${timer}s`
-                          : "OTP expired — go back and try again"}
-                      </div>
-                    </>
-                  )}
-                  {signupStep === 3 && (
-                    <>
-                      <FieldInput
-                        icon={<Lock size={20} />}
-                        isPassword
-                        placeholder="New Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                      <FieldInput
-                        icon={<Lock size={20} />}
-                        isPassword
-                        placeholder="Confirm Password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                      />
-                    </>
-                  )}
+                  <FieldInput
+                    icon={<User size={20} />}
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                  <FieldInput
+                    icon={<Phone size={20} />}
+                    placeholder="Phone Number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    maxLength={11}
+                    inputMode="numeric"
+                  />
+                  <FieldInput
+                    icon={<Lock size={20} />}
+                    isPassword
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <FieldInput
+                    icon={<Lock size={20} />}
+                    isPassword
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
                   <Button
                     fullWidth
                     onClick={handleSignupFlow}
-                    disabled={loading || (signupStep === 2 && timer === 0)}
+                    disabled={loading}
                   >
-                    {loading
-                      ? "Processing..."
-                      : signupStep === 3
-                        ? "Finish"
-                        : "Continue"}
+                    {loading ? "Processing..." : "Register"}
                   </Button>
-                  {signupStep > 1 && (
-                    <button
-                      className={styles.backButton}
-                      onClick={() => setSignupStep(signupStep - 1)}
-                    >
-                      ← Go Back
-                    </button>
-                  )}
                 </>
               )}
 
@@ -329,7 +245,6 @@ const Auth = () => {
                   className={styles.switchBtn}
                   onClick={() => {
                     setIsLogin(!isLogin);
-                    setSignupStep(1);
                     setMsg("");
                   }}
                 >

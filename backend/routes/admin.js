@@ -136,7 +136,7 @@ router.post('/qualities', auth, adminAuth, upload.single('image'), async (req, r
     const { name, tag, price, image_url: providedUrl } = req.body;
     let image_url = providedUrl || '';
     if (req.file) {
-      image_url = `http://192.168.18.18:5000/uploads/${req.file.filename}`;
+      image_url = `https://api.almadina.site/uploads/${req.file.filename}`;
     }
     const quality = await Quality.create({ name, image_url, tag, price: price || 0 });
     res.json(quality);
@@ -153,7 +153,7 @@ router.put('/qualities/:id', auth, adminAuth, upload.single('image'), async (req
     if (!quality) return res.status(404).json({ msg: 'Not found' });
     let image_url = providedUrl || quality.image_url;
     if (req.file) {
-      image_url = `http://192.168.18.18:5000/uploads/${req.file.filename}`;
+      image_url = `https://api.almadina.site/uploads/${req.file.filename}`;
     }
     quality.name = name || quality.name;
     quality.tag = tag || quality.tag;

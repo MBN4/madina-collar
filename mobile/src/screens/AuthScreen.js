@@ -7,7 +7,9 @@ import {
   Dimensions,
   Easing,
   Image,
-  KeyboardAvoidingView, Platform, ScrollView,
+  KeyboardAvoidingView,
+  Linking,
+  Platform, ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -95,14 +97,10 @@ const MarqueeRow = ({ logos, duration = 25000, reverse = false, yOffset = 0 }) =
 const AuthScreen = () => {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isLogin, setIsLogin] = useState(true);
-  const [signupStep, setSignupStep] = useState(1);
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [timer, setTimer] = useState(60);
-  const [isTimerActive, setIsTimerActive] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const entranceAnim = useRef(new Animated.Value(0)).current;
@@ -115,48 +113,21 @@ const AuthScreen = () => {
       Animated.spring(formAnim, { toValue: 0, friction: 8, useNativeDriver: true }),
       Animated.spring(logoScale, { toValue: 1, friction: 6, useNativeDriver: true })
     ]).start();
-  }, [isLogin, signupStep]);
-
-  useEffect(() => {
-    let interval;
-    if (isTimerActive && timer > 0) {
-      interval = setInterval(() => setTimer((t) => t - 1), 1000);
-    } else if (timer === 0) {
-      setIsTimerActive(false);
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [isTimerActive, timer]);
+  }, [isLogin]);
 
   const handleSignupFlow = async () => {
     if (loading) return;
-    if (signupStep === 1) {
-      if (!username || !phone) return Alert.alert("Error", "Please enter all details");
-      if (phone.length !== 11) return Alert.alert("Error", "Phone number must be exactly 11 digits");
-    } else if (signupStep === 2) {
-      if (otp.length < 4) return Alert.alert("Error", "Enter valid OTP");
-    } else if (password !== confirmPassword) {
-      return Alert.alert("Error", "Passwords do not match");
-    }
+    if (!username || !phone || !password || !confirmPassword) return Alert.alert("Error", "Please enter all details");
+    if (phone.length !== 11) return Alert.alert("Error", "Phone number must be exactly 11 digits");
+    if (password !== confirmPassword) return Alert.alert("Error", "Passwords do not match");
     setLoading(true);
     try {
-      if (signupStep === 1) {
-        await api.post('/auth/register/step1', { username, phone });
-        setSignupStep(2);
-        setTimer(60);
-        setIsTimerActive(true);
-      }
-      else if (signupStep === 2) {
-        await api.post('/auth/register/step2', { phone, otp });
-        setSignupStep(3);
-        setIsTimerActive(false);
-      }
-      else {
-        await api.post('/auth/register/step3', { username, phone, password });
-        Alert.alert("Success", "Registration complete! Please Sign In.");
-        setIsLogin(true);
-        setSignupStep(1);
-      }
+      await api.post('/auth/register', { username, phone, password });
+      Alert.alert("Success", "Registration complete! Please Sign In.");
+      setIsLogin(true);
+      setUsername('');
+      setPassword('');
+      setConfirmPassword('');
     } catch (err) {
       Alert.alert("Error", err.response?.data?.msg || "Something went wrong");
     } finally {
@@ -214,7 +185,7 @@ const AuthScreen = () => {
                  <Image source={require('../../assets/images/madina-collar-round.png')} style={styles.logo} resizeMode="contain" />
               </View>
               <Text style={styles.title}>{isLogin ? 'Authentic Choice' : 'Join the Elite'}</Text>
-              <Text style={styles.subtitle}>{isLogin ? 'Sign in to continue your journey.' : `Step ${signupStep} of 3`}</Text>
+              <Text style={styles.subtitle}>{isLogin ? 'Sign in to continue your journey.' : 'Create your account to get started.'}</Text>
             </Animated.View>
             
             <Animated.View style={[styles.form, { opacity: entranceAnim, transform: [{ translateY: formAnim }] }]}>
@@ -243,46 +214,34 @@ const AuthScreen = () => {
                 </>
               ) : (
                 <>
-                  {signupStep === 1 && (
-                    <>
-                      <View style={styles.inputWrapper}>
-                        <User size={20} color={COLORS.primary} style={styles.inputIcon} />
-                        <TextInput placeholder="Username" placeholderTextColor="#999" style={styles.flexInput} value={username} onChangeText={setUsername} />
-                      </View>
-                      <View style={styles.inputWrapper}>
-                        <Phone size={20} color={COLORS.primary} style={styles.inputIcon} />
-                        <TextInput placeholder="Phone Number" placeholderTextColor="#999" keyboardType="phone-pad" maxLength={11} style={styles.flexInput} value={phone} onChangeText={setPhone} />
-                      </View>
-                    </>
-                  )}
-                  {signupStep === 2 && (
-                    <View>
-                      <TextInput placeholder="0000" placeholderTextColor="#999" keyboardType="number-pad" maxLength={4} style={[styles.input, styles.otpInput]} value={otp} onChangeText={setOtp} />
-                      <Text style={styles.timerText}>{timer > 0 ? `Resend OTP in ${timer}s` : "OTP Expired. Please go back."}</Text>
-                    </View>
-                  )}
-                  {signupStep === 3 && (
-                    <>
-                      <PasswordInput placeholder="New Password" value={password} onChangeText={setPassword} />
-                      <PasswordInput placeholder="Confirm Password" value={confirmPassword} onChangeText={setConfirmPassword} />
-                    </>
-                  )}
-                  <TouchableOpacity activeOpacity={0.8} style={[styles.mainButton, ((signupStep === 2 && timer === 0) || loading) && styles.mainButtonDisabled]} onPress={handleSignupFlow} disabled={(signupStep === 2 && timer === 0) || loading}>
+                  <View style={styles.inputWrapper}>
+                    <User size={20} color={COLORS.primary} style={styles.inputIcon} />
+                    <TextInput placeholder="Username" placeholderTextColor="#999" style={styles.flexInput} value={username} onChangeText={setUsername} />
+                  </View>
+                  <View style={styles.inputWrapper}>
+                    <Phone size={20} color={COLORS.primary} style={styles.inputIcon} />
+                    <TextInput placeholder="Phone Number" placeholderTextColor="#999" keyboardType="phone-pad" maxLength={11} style={styles.flexInput} value={phone} onChangeText={setPhone} />
+                  </View>
+                  <PasswordInput placeholder="Password" value={password} onChangeText={setPassword} />
+                  <PasswordInput placeholder="Confirm Password" value={confirmPassword} onChangeText={setConfirmPassword} />
+                  <TouchableOpacity activeOpacity={0.8} style={[styles.mainButton, loading && styles.mainButtonDisabled]} onPress={handleSignupFlow} disabled={loading}>
                     {loading ? (
                       <ActivityIndicator color={COLORS.textPrimary} />
                     ) : (
-                      <Text style={styles.buttonText}>{signupStep === 3 ? 'FINISH' : 'CONTINUE'}</Text>
+                      <Text style={styles.buttonText}>REGISTER</Text>
                     )}
                   </TouchableOpacity>
-                  {signupStep > 1 && (
-                     <TouchableOpacity onPress={() => setSignupStep(signupStep - 1)} style={styles.backButton}><Text style={styles.backButtonText}>Go Back</Text></TouchableOpacity>
-                  )}
                 </>
               )}
-              <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setSignupStep(1); }} style={styles.switchButton}>
+              <TouchableOpacity onPress={() => { setIsLogin(!isLogin); }} style={styles.switchButton}>
                 <Text style={styles.switchText}>
                   {isLogin ? "Don't have an account? " : "Already have an account? "}
                   <Text style={styles.switchHighlight}>{isLogin ? 'Sign Up' : 'Sign In'}</Text>
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => Linking.openURL('https://toptrendingms.com/')} style={styles.creditButton}>
+                <Text style={styles.creditText}>
+                  Designed & Developed by <Text style={styles.creditHighlight}>TOPTRENDING</Text>
                 </Text>
               </TouchableOpacity>
             </Animated.View>
@@ -367,9 +326,12 @@ const styles = StyleSheet.create({
   buttonText: { color: COLORS.textPrimary, fontWeight: '900', fontSize: 18, letterSpacing: 1.5 },
   backButton: { marginTop: 20, padding: 10 },
   backButtonText: { color: COLORS.textSecondary, textAlign: 'center', fontWeight: '700' },
-  switchButton: { marginTop: 35, marginBottom: 40, alignItems: 'center' },
+  switchButton: { marginTop: 35, marginBottom: 12, alignItems: 'center' },
   switchText: { color: COLORS.textPrimary, fontSize: 15, letterSpacing: 0.5, fontWeight: '600' },
   switchHighlight: { color: COLORS.textSecondary, fontWeight: '900', textDecorationLine: 'underline' },
+  creditButton: { marginBottom: 30, alignItems: 'center', paddingVertical: 6 },
+  creditText: { color: COLORS.textPrimary, opacity: 0.5, fontSize: 10, letterSpacing: 1.5, fontWeight: '700', textTransform: 'uppercase' },
+  creditHighlight: { opacity: 1, fontWeight: '900', color: COLORS.textPrimary },
   
   // Marquee Styles
   marqueeBackground: {

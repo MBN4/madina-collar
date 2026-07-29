@@ -2,7 +2,7 @@ import type { AxiosInstance } from "axios";
 import axios from "axios";
 
 export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://192.168.18.18:5000/api";
+  process.env.NEXT_PUBLIC_API_URL || "https://api.almadina.site/api";
 
 export const getImageUrl = (url: string) => {
   if (!url) return "";

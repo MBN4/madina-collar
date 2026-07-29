@@ -3,56 +3,18 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import auth from "../middleware/auth.js";
 import BlacklistedToken from "../models/BlacklistedToken.js";
-import Otp from "../models/Otp.js";
 import User from "../models/User.js";
 
 const router = express.Router();
 
-router.post("/register/step1", async (req, res) => {
-  const { username, phone } = req.body;
-  try {
-    let user = await User.findOne({ where: { phone } });
-    if (user)
-      return res.status(400).json({ msg: "Phone number already registered" });
-    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
-    const expiresAt = new Date(Date.now() + 60 * 1000);
-    await Otp.create({ phone, otp_code: otpCode, expires_at: expiresAt });
-    // For local development, log the OTP so it can be read in the backend terminal.
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`DEV OTP for ${phone}: ${otpCode}`);
-    }
-    res.json({ msg: "OTP sent to WhatsApp" });
-  } catch (err) {
-    res.status(500).send("Server error");
-  }
-});
-
-router.post("/register/step2", async (req, res) => {
-  const { phone, otp } = req.body;
-  try {
-    const record = await Otp.findOne({
-      where: { phone, otp_code: otp, is_verified: false },
-      order: [["createdAt", "DESC"]],
-    });
-    if (!record) return res.status(400).json({ msg: "Invalid OTP" });
-    if (new Date() > record.expires_at)
-      return res.status(400).json({ msg: "OTP has expired" });
-    record.is_verified = true;
-    await record.save();
-    res.json({ msg: "OTP verified successfully" });
-  } catch (err) {
-    res.status(500).send("Server error");
-  }
-});
-
-router.post("/register/step3", async (req, res) => {
+router.post("/register", async (req, res) => {
   const { username, phone, password } = req.body;
   try {
-    const isVerified = await Otp.findOne({
-      where: { phone, is_verified: true },
-    });
-    if (!isVerified)
-      return res.status(400).json({ msg: "Please verify OTP first" });
+    if (!username || !phone || !password)
+      return res.status(400).json({ msg: "All fields are required" });
+    const existing = await User.findOne({ where: { phone } });
+    if (existing)
+      return res.status(400).json({ msg: "Phone number already registered" });
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const newUser = await User.create({
@@ -118,8 +80,6 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid Credentials" });
 
-    // Use a development fallback when JWT_SECRET is not provided to avoid
-    // throwing during local testing. Replace with a strong secret in prod.
     const jwtSecret = process.env.JWT_SECRET || "dev_secret_change_me";
     const token = jwt.sign({ id: user.id, role: user.role }, jwtSecret, {
       expiresIn: "7d",

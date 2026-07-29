@@ -3,9 +3,8 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: '192.168.18.18',
-        port: '5000'
+        protocol: 'https',
+        hostname: 'api.almadina.site'
       }
     ]
   }
