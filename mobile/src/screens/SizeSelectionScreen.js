@@ -145,17 +145,26 @@ const SizeSelectionScreen = ({ route, navigation }) => {
     const quantity = cart[cartKey]?.[attr.value] || 0;
     const isOutOfStock = !attr.in_stock;
     const price = getMatrixPrice(attr.id);
+    const unpriced = !(price > 0);
+    const unavailable = isOutOfStock || unpriced;
     return (
-      <Animated.View key={`size-item-${attr.id}`} entering={FadeInRight.delay(index * 20)} layout={Layout.springify()} style={styles.sizeRow}>
+      <Animated.View key={`size-item-${attr.id}`} entering={FadeInRight.delay(index * 20)} layout={Layout.springify()} style={[styles.sizeRow, unavailable && { opacity: 0.55, backgroundColor: '#EEEEEE' }]}>
         <View>
-          <Text style={[styles.sizeLabel, isOutOfStock && { color: '#CCC', textDecorationLine: 'line-through' }]}>Size {attr.value}</Text>
-          <View style={styles.priceContainer}><Text style={styles.priceValue}>Rs {price}</Text>{isOutOfStock && <View style={styles.outBadge}><Text style={styles.outText}>OUT OF STOCK</Text></View>}</View>
+          <Text style={[styles.sizeLabel, unavailable && { color: '#999', textDecorationLine: isOutOfStock ? 'line-through' : 'none' }]}>Size {attr.value}</Text>
+          <View style={styles.priceContainer}>
+            <Text style={[styles.priceValue, unpriced && { color: '#999' }]}>{price > 0 ? `Rs ${price}` : 'NA'}</Text>
+            {isOutOfStock ? (
+              <View style={styles.outBadge}><Text style={styles.outText}>OUT OF STOCK</Text></View>
+            ) : unpriced ? (
+              <View style={styles.outBadge}><Text style={styles.outText}>NOT AVAILABLE</Text></View>
+            ) : null}
+          </View>
         </View>
-        <View style={[styles.controlsContainer, isOutOfStock && { opacity: 0.4 }]}>
-          <TextInput style={styles.quantityInput} value={quantity.toString()} onChangeText={(t) => !isOutOfStock && handleManualInput(attr.value, t)} keyboardType="number-pad" editable={!isOutOfStock} color={COLORS.textPrimary} />
+        <View style={[styles.controlsContainer, unavailable && { opacity: 0.4 }]}>
+          <TextInput style={styles.quantityInput} value={quantity.toString()} onChangeText={(t) => !unavailable && handleManualInput(attr.value, t)} keyboardType="number-pad" editable={!unavailable} color={COLORS.textPrimary} />
           <View style={styles.arrowStack}>
-            <TouchableOpacity onPress={() => !isOutOfStock && updateQuantity(cartKey, attr.value, 1)} style={styles.arrowButton}><ChevronUp size={18} color={currentTheme.primary} strokeWidth={3} /></TouchableOpacity>
-            <TouchableOpacity onPress={() => !isOutOfStock && updateQuantity(cartKey, attr.value, -1)} style={styles.arrowButton}><ChevronDown size={18} color={currentTheme.primary} strokeWidth={3} /></TouchableOpacity>
+            <TouchableOpacity disabled={unavailable} onPress={() => !unavailable && updateQuantity(cartKey, attr.value, 1)} style={styles.arrowButton}><ChevronUp size={18} color={currentTheme.primary} strokeWidth={3} /></TouchableOpacity>
+            <TouchableOpacity disabled={unavailable} onPress={() => !unavailable && updateQuantity(cartKey, attr.value, -1)} style={styles.arrowButton}><ChevronDown size={18} color={currentTheme.primary} strokeWidth={3} /></TouchableOpacity>
           </View>
         </View>
       </Animated.View>

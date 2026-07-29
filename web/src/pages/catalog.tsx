@@ -91,7 +91,7 @@ export default function Catalog() {
                       <ChevronRight size={14} color="#fff" strokeWidth={4} />
                     </div>
                   </div>
-                  <div className={styles.priceLine}>Starting at Rs {quality.price}</div>
+                  <div className={styles.priceLine}>{Number(quality.price) > 0 ? `Starting at Rs ${quality.price}` : 'Price NA'}</div>
                 </Link>
               </StaggerItem>
             ))}

@@ -209,7 +209,7 @@ export default function Product() {
               pick the category and color, then set quantities for every size.
             </p>
           </div>
-          <div className={styles.priceBox}>Rs {qualityData.price}</div>
+          <div className={styles.priceBox}>{Number(qualityData.price) > 0 ? `Rs ${qualityData.price}` : 'NA'}</div>
         </div>
 
         <div className={styles.productGrid}>
@@ -345,21 +345,27 @@ export default function Product() {
                     const price = getMatrixPrice(size.id);
                     const qty = cartKey ? cart[cartKey]?.[size.value] || 0 : 0;
                     const outOfStock = !size.in_stock;
+                    const unpriced = !(price > 0);
+                    const unavailable = outOfStock || unpriced;
                     return (
                       <StaggerItem key={size.id} index={index} staggerMs={20} direction="right">
                         <div
-                          className={`${styles.sizeCard} ${outOfStock ? styles.outOfStock : ""}`}
+                          className={`${styles.sizeCard} ${unavailable ? styles.outOfStock : ""}`}
                         >
                           <div className={styles.sizeTop}>
                             <span>Size {size.value}</span>
-                            <strong>Rs {price}</strong>
+                            <strong>{price > 0 ? `Rs ${price}` : 'NA'}</strong>
                             {outOfStock ? (
                               <div className={styles.outOfStockBadge}>
                                 Out of Stock
                               </div>
+                            ) : unpriced ? (
+                              <div className={styles.outOfStockBadge}>
+                                Not Available
+                              </div>
                             ) : null}
                           </div>
-                          {!outOfStock && (
+                          {!unavailable && (
                             <div className={styles.sizeBottom}>
                               <input
                                 className={styles.qtyInput}
