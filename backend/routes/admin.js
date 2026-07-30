@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
 import { Sequelize, Op } from 'sequelize';
+import { sequelize } from '../config/db.js';
 import auth from '../middleware/auth.js';
 import adminAuth from '../middleware/adminAuth.js';
 import Order from '../models/Order.js';
@@ -188,6 +189,21 @@ router.post('/styles', auth, adminAuth, async (req, res) => {
   }
 });
 
+router.put('/styles/:id', auth, adminAuth, async (req, res) => {
+  if (!isMaster(req)) return res.status(403).json({ msg: 'Forbidden' });
+  try {
+    const style = await Style.findByPk(req.params.id);
+    if (!style) return res.status(404).json({ msg: 'Not found' });
+    if (typeof req.body.name === 'string' && req.body.name.trim()) {
+      style.name = req.body.name.trim();
+      await style.save();
+    }
+    res.json(style);
+  } catch (err) {
+    res.status(500).send('Error');
+  }
+});
+
 router.delete('/styles/:id', auth, adminAuth, async (req, res) => {
   if (!isMaster(req)) return res.status(403).json({ msg: 'Forbidden' });
   try {
@@ -274,29 +290,48 @@ router.post('/pricing/seed-dummy', auth, adminAuth, async (req, res) => {
 
 router.post('/pricing/update', auth, adminAuth, async (req, res) => {
   if (!isMaster(req)) return res.status(403).json({ msg: 'Forbidden' });
+  const { styleId, categoryId, colorId, widthId, prices } = req.body;
+
+  // FIX 4: fail fast with a clear error rather than 500ing mid-loop after
+  // some rows have already been destroyed. PriceMatrix requires styleId +
+  // categoryId + colorId + sizeId; widthId is optional.
+  if (styleId == null || categoryId == null || colorId == null) {
+    return res.status(400).json({ msg: 'styleId, categoryId and colorId are required' });
+  }
+  if (!Array.isArray(prices) || prices.length === 0) {
+    return res.status(400).json({ msg: 'prices must be a non-empty array' });
+  }
+
+  // FIX 2: wrap the entire write in a single transaction so a mid-loop
+  // failure rolls back every prior change. Also switch from destroy+create
+  // to an upsert-style find-then-update-or-create so we never leave the DB
+  // in a half-deleted state even without the transaction guard.
+  const t = await sequelize.transaction();
   try {
-    for (let p of req.body.prices) {
-      await PriceMatrix.destroy({ 
-        where: { 
-          styleId: req.body.styleId, 
-          categoryId: req.body.categoryId, 
-          colorId: req.body.colorId, 
-          widthId: req.body.widthId || null, 
-          sizeId: p.sizeId 
-        } 
-      });
-      await PriceMatrix.create({
-        styleId: req.body.styleId,
-        categoryId: req.body.categoryId,
-        colorId: req.body.colorId,
-        widthId: req.body.widthId || null,
+    for (const p of prices) {
+      if (p == null || p.sizeId == null) continue;
+      const priceValue = Math.max(0, Number(p.price) || 0);
+      const where = {
+        styleId,
+        categoryId,
+        colorId,
+        widthId: widthId || null,
         sizeId: p.sizeId,
-        price: p.price
-      });
+      };
+      const existing = await PriceMatrix.findOne({ where, transaction: t });
+      if (existing) {
+        existing.price = priceValue;
+        await existing.save({ transaction: t });
+      } else {
+        await PriceMatrix.create({ ...where, price: priceValue }, { transaction: t });
+      }
     }
+    await t.commit();
     res.json({ msg: 'Success' });
   } catch (err) {
-    res.status(500).send('Error');
+    await t.rollback();
+    console.error('pricing/update failed:', err);
+    res.status(500).json({ msg: 'Update failed' });
   }
 });
 

@@ -55,4 +55,27 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// 401 → wipe SecureStore and reset auth. AppNavigator watches
+// isAuthenticated and swaps back to the Auth stack automatically, so no
+// manual navigation is needed. Dynamic import breaks the api <-> store
+// circular dependency at load time.
+api.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    if (err?.response?.status === 401) {
+      try {
+        const { useAuthStore } = await import('../store/useAuthStore');
+        await useAuthStore.getState().logout();
+      } catch (e) {
+        // Fallback if the store fails to load — clear tokens directly.
+        try {
+          await SecureStore.deleteItemAsync('userToken');
+          await SecureStore.deleteItemAsync('userData');
+        } catch {}
+      }
+    }
+    return Promise.reject(err);
+  },
+);
+
 export default api;
