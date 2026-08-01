@@ -476,7 +476,18 @@
   }
 
   .imagePanel {
-    padding: 28px;
+    /* Sticky is desktop-only. On mobile the grid collapses to one column
+       and sticky would pin the image to the viewport top, causing it to
+       overlap the OPTIONS section as the user scrolls. */
+    position: static;
+    top: auto;
+    padding: 20px;
+    margin-bottom: 4px;
+  }
+
+  .imagePanel img {
+    width: 70%;
+    max-height: 220px;
   }
 
   .footerBar {
