@@ -1,8 +1,9 @@
-import { Check, ChevronDown, ChevronRight, ChevronUp, ShoppingBag } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import PageShell from "../components/PageShell";
 import Loader from "../components/ui/Loader";
+import SizeLabel from "../components/SizeLabel";
 import StaggerItem from "../components/ui/StaggerItem";
 import { useRequireAuth } from "../hooks/useRequireAuth";
 import { useCartStore } from "../store/cartStore";
@@ -24,12 +25,12 @@ export default function Product() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] =
     useState<ProductAttribute | null>(null);
-  const [selectedColor, setSelectedColor] = useState<ProductAttribute | null>(
-    null,
-  );
   const [selectedWidth, setSelectedWidth] = useState<ProductAttribute | null>(
     null,
   );
+  const [activeColorBySize, setActiveColorBySize] = useState<
+    Record<number, number>
+  >({});
   const { updateQuantity, cart, getTotalItems } = useCartStore();
 
   const currentTheme = (qualityName && QUALITY_THEMES[qualityName]) || DEFAULT_QUALITY_THEME;
@@ -86,16 +87,15 @@ export default function Product() {
   useEffect(() => {
     if (!selectedType || !currentStyle) return;
     if (categories.length) setSelectedCategory(categories[0]);
-    if (colors.length) setSelectedColor(colors[0]);
     setSelectedWidth(widths.length ? widths[0] : null);
   }, [selectedType, currentStyle]);
 
-  const getMatrixPrice = (sizeId: number) => {
-    if (!selectedCategory || !selectedColor) return 0;
+  const getMatrixPrice = (sizeId: number, color: ProductAttribute) => {
+    if (!selectedCategory) return 0;
     const match = currentStyle?.PriceMatrices?.find(
       (p) =>
         p.categoryId === selectedCategory.id &&
-        p.colorId === selectedColor.id &&
+        p.colorId === color.id &&
         (widths.length > 0 ? p.widthId === selectedWidth?.id : true) &&
         p.sizeId === sizeId,
     );
@@ -143,36 +143,32 @@ export default function Product() {
     return total;
   }, [cart, qualityData, qualityName]);
 
-  const cartKey = useMemo(() => {
-    if (!qualityName || !selectedType || !selectedCategory || !selectedColor)
-      return null;
-    let key = `${qualityName}|${selectedType}|${selectedCategory.value}|${selectedColor.value}`;
+  const buildCartKey = (color: ProductAttribute) => {
+    if (!qualityName || !selectedType || !selectedCategory) return null;
+    let key = `${qualityName}|${selectedType}|${selectedCategory.value}|${color.value}`;
     if (selectedWidth) key += `|${selectedWidth.value}`;
     return key;
-  }, [
-    qualityName,
+  };
+
+  const getActiveColor = (size: ProductAttribute) => {
+    const activeId = activeColorBySize[size.id];
+    return colors.find((c) => c.id === activeId) || colors[0];
+  };
+
+  const selectedSummaryParts = [
     selectedType,
-    selectedCategory,
-    selectedColor,
-    selectedWidth,
-  ]);
+    selectedCategory?.value,
+    selectedWidth?.value,
+  ].filter(Boolean) as string[];
 
-  const selectedSummary = useMemo(() => {
-    const parts = [
-      selectedType,
-      selectedCategory?.value,
-      selectedColor?.value,
-      selectedWidth?.value,
-    ].filter(Boolean) as string[];
-    return parts.join(" • ");
-  }, [selectedType, selectedCategory, selectedColor, selectedWidth]);
-
-  const handleAdjust = (sizeValue: string, delta: number) => {
+  const handleAdjust = (sizeValue: string, color: ProductAttribute, delta: number) => {
+    const cartKey = buildCartKey(color);
     if (!cartKey) return;
     updateQuantity(cartKey, sizeValue, delta);
   };
 
-  const handleManualInput = (sizeValue: string, text: string) => {
+  const handleManualInput = (sizeValue: string, color: ProductAttribute, text: string) => {
+    const cartKey = buildCartKey(color);
     if (!cartKey) return;
     const newVal = parseInt(text.replace(/[^0-9]/g, ""), 10) || 0;
     const currentQty = cart[cartKey]?.[sizeValue] || 0;
@@ -224,7 +220,16 @@ export default function Product() {
 
           <div className={styles.detailsPanel}>
             <div className={styles.selectionSummary}>
-              {selectedSummary || "Select a style to begin"}
+              {selectedSummaryParts.length ? (
+                selectedSummaryParts.map((part, i) => (
+                  <span key={i}>
+                    {i > 0 ? " • " : ""}
+                    <SizeLabel value={part} />
+                  </span>
+                ))
+              ) : (
+                "Select a style to begin"
+              )}
             </div>
 
             <div className={styles.sectionCard}>
@@ -252,7 +257,7 @@ export default function Product() {
               <div className={styles.sectionHeader}>
                 <h2>Options</h2>
                 <span className={styles.sectionCopy}>
-                  Category, color, and width stay in sync
+                  Category and width stay in sync — pick a color per size below
                 </span>
               </div>
               <div className={styles.optionGroups}>
@@ -277,32 +282,6 @@ export default function Product() {
                   </div>
                 )}
 
-                {colors.length > 0 && (
-                  <div>
-                    <div className={styles.optionLabel}>Color</div>
-                    <div className={styles.colorRow}>
-                      {colors.map((color) => (
-                        <button
-                          key={color.id}
-                          className={`${styles.colorSwatch} ${selectedColor?.id === color.id ? styles.activeColor : ""}`}
-                          style={{ backgroundColor: color.hex_code || "#ccc" }}
-                          onClick={() => setSelectedColor(color)}
-                          title={color.value}
-                          aria-label={color.value}
-                        >
-                          {selectedColor?.id === color.id ? (
-                            <Check
-                              size={16}
-                              strokeWidth={4}
-                              color={color.value.toLowerCase() === "black" ? "#fff" : currentTheme.primary}
-                            />
-                          ) : null}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {widths.length > 0 && (
                   <div>
                     <div className={styles.optionLabel}>Width</div>
@@ -317,7 +296,7 @@ export default function Product() {
                           }
                           onClick={() => setSelectedWidth(width)}
                         >
-                          {width.value}
+                          <SizeLabel value={width.value} />
                         </button>
                       ))}
                     </div>
@@ -330,62 +309,107 @@ export default function Product() {
               <div className={styles.sectionHeader}>
                 <h2>Sizes & Quantities</h2>
                 <span className={styles.sectionCopy}>
-                  {selectedCategory && selectedColor
-                    ? `${selectedCategory.value} • ${selectedColor.value}`
-                    : "Choose category and color to unlock size options"}
+                  {selectedCategory
+                    ? `${selectedCategory.value} — pick a color per size, then set quantity`
+                    : "Choose a category to unlock size options"}
                 </span>
               </div>
-              {!selectedCategory || !selectedColor ? (
+              {!selectedCategory || !colors.length ? (
                 <div className={styles.selectPrompt}>
-                  Select Category &amp; Color to see sizes
+                  {!selectedCategory
+                    ? "Select a Category to see sizes"
+                    : "No colors configured for this style"}
                 </div>
               ) : (
-                <div className={styles.sizeGrid}>
+                <div className={styles.sizeList}>
                   {sizes.map((size, index) => {
-                    const price = getMatrixPrice(size.id);
-                    const qty = cartKey ? cart[cartKey]?.[size.value] || 0 : 0;
                     const outOfStock = !size.in_stock;
+                    const activeColor = getActiveColor(size);
+                    const cartKey = buildCartKey(activeColor);
+                    const price = getMatrixPrice(size.id, activeColor);
+                    const qty = cartKey
+                      ? cart[cartKey]?.[size.value] || 0
+                      : 0;
                     const unpriced = !(price > 0);
                     const unavailable = outOfStock || unpriced;
                     return (
-                      <StaggerItem key={size.id} index={index} staggerMs={20} direction="right">
-                        <div
-                          className={`${styles.sizeCard} ${unavailable ? styles.outOfStock : ""}`}
-                        >
-                          <div className={styles.sizeTop}>
-                            <span>Size {size.value}</span>
-                            <strong>{price > 0 ? `Rs ${price}` : 'NA'}</strong>
-                            {outOfStock ? (
-                              <div className={styles.outOfStockBadge}>
-                                Out of Stock
-                              </div>
-                            ) : unpriced ? (
-                              <div className={styles.outOfStockBadge}>
-                                Not Available
-                              </div>
-                            ) : null}
+                      <StaggerItem
+                        key={size.id}
+                        index={index}
+                        staggerMs={20}
+                        direction="right"
+                      >
+                        <div className={styles.sizeRow}>
+                          <div className={styles.sizeRowLabel}>
+                            <SizeLabel value={size.value} />
                           </div>
-                          {!unavailable && (
-                            <div className={styles.sizeBottom}>
-                              <input
-                                className={styles.qtyInput}
-                                type="text"
-                                inputMode="numeric"
-                                value={qty}
-                                onChange={(e) =>
-                                  handleManualInput(size.value, e.target.value)
+
+                          <div className={styles.colorChips}>
+                            {colors.map((color) => (
+                              <button
+                                key={color.id}
+                                type="button"
+                                className={`${styles.colorChip} ${activeColor?.id === color.id ? styles.colorChipActive : ""}`}
+                                style={{ backgroundColor: color.hex_code || "#ccc" }}
+                                onClick={() =>
+                                  setActiveColorBySize((prev) => ({
+                                    ...prev,
+                                    [size.id]: color.id,
+                                  }))
                                 }
+                                title={color.value}
+                                aria-label={color.value}
+                                aria-pressed={activeColor?.id === color.id}
                               />
-                              <div>
-                                <button onClick={() => handleAdjust(size.value, 1)} aria-label="Increase">
-                                  <ChevronUp size={16} strokeWidth={3} />
-                                </button>
-                                <button onClick={() => handleAdjust(size.value, -1)} aria-label="Decrease">
-                                  <ChevronDown size={16} strokeWidth={3} />
-                                </button>
-                              </div>
-                            </div>
-                          )}
+                            ))}
+                          </div>
+
+                          <div
+                            className={`${styles.sizeRowCounter} ${unavailable ? styles.outOfStock : ""}`}
+                          >
+                            {unavailable ? (
+                              <span className={styles.cellNa}>
+                                {outOfStock ? "Out of Stock" : "NA"}
+                              </span>
+                            ) : (
+                              <>
+                                <span className={styles.cellPrice}>Rs {price}</span>
+                                <div className={styles.sizeBottom}>
+                                  <input
+                                    className={styles.qtyInput}
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={qty}
+                                    onChange={(e) =>
+                                      handleManualInput(
+                                        size.value,
+                                        activeColor,
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                  <div>
+                                    <button
+                                      onClick={() =>
+                                        handleAdjust(size.value, activeColor, 1)
+                                      }
+                                      aria-label="Increase"
+                                    >
+                                      <ChevronUp size={16} strokeWidth={3} />
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleAdjust(size.value, activeColor, -1)
+                                      }
+                                      aria-label="Decrease"
+                                    >
+                                      <ChevronDown size={16} strokeWidth={3} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </StaggerItem>
                     );

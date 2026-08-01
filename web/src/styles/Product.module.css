@@ -217,37 +217,6 @@
   box-shadow: 0 3px 10px rgba(255, 215, 0, 0.35);
 }
 
-/* ── Color swatches ───────────────────────────────── */
-
-.colorRow {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.colorSwatch {
-  position: relative;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 1px solid var(--border-light);
-  cursor: pointer;
-  transition: var(--transition-fast);
-  box-shadow: var(--shadow-soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.colorSwatch:hover {
-  transform: scale(1.08);
-}
-
-.colorSwatch.activeColor {
-  border: 2.5px solid var(--primary-gold);
-}
-
 /* ── Option groups ────────────────────────────────── */
 
 .optionGroups {
@@ -280,51 +249,84 @@
   letter-spacing: 0.14em;
 }
 
-/* ── Size grid ────────────────────────────────────── */
+/* ── Size rows (color chips + single counter) ─────── */
 
-.sizeGrid {
+.sizeList {
   display: flex;
   flex-direction: column;
 }
 
-.sizeCard {
+.sizeRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 18px 4px;
+  gap: 14px;
+  padding: 14px 4px;
   border-bottom: 1px solid #f8f8f8;
-  transition: var(--transition-fast);
+  flex-wrap: wrap;
 }
 
-.sizeCard:last-child {
+.sizeRow:last-child {
   border-bottom: none;
 }
 
-.outOfStock {
-  opacity: 0.5;
-}
-
-.sizeTop {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.sizeTop span {
+.sizeRowLabel {
+  flex-shrink: 0;
+  width: 56px;
   font-family: "Outfit", sans-serif;
   font-weight: 800;
   color: var(--text-primary);
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 
-.sizeTop strong {
+.colorChips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.colorChip {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  padding: 0;
+  transition: var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.colorChip:hover {
+  transform: scale(1.08);
+}
+
+.colorChipActive {
+  box-shadow: 0 0 0 2.5px var(--primary-gold);
+}
+
+.sizeRowCounter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.sizeRowCounter.outOfStock {
+  opacity: 0.5;
+}
+
+.cellPrice {
   font-family: "Outfit", sans-serif;
   font-weight: 900;
   color: var(--metallic-gold);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
 }
 
-.outOfStockBadge {
+.cellNa {
   font-size: 0.62rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -333,7 +335,6 @@
   background: rgba(255, 82, 82, 0.08);
   border-radius: 4px;
   padding: 3px 6px;
-  align-self: flex-start;
 }
 
 .sizeBottom {
@@ -495,5 +496,20 @@
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     margin: 10px -16px -32px;
     width: calc(100% + 32px);
+  }
+
+  .sizeRow {
+    gap: 10px;
+  }
+
+  .sizeRowLabel {
+    width: 44px;
+    font-size: 0.9rem;
+  }
+
+  .sizeRowCounter {
+    width: 100%;
+    align-items: flex-start;
+    margin-left: 0;
   }
 }

@@ -19,7 +19,6 @@ export default function PageShell({ title, children }: Props) {
             <div className={styles.brandBadge}>MC</div>
             <div>
               <div className={styles.brand}>Madina Collar</div>
-              <div className={styles.brandSub}>Premium Fabric Studio</div>
             </div>
           </Link>
           <nav className={styles.nav}>

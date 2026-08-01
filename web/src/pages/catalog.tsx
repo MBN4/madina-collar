@@ -1,7 +1,6 @@
-import { ChevronRight, Layers, RefreshCcw, TrendingUp } from "lucide-react";
+import { ChevronRight, Layers, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import PageShell from "../components/PageShell";
 import StaggerItem from "../components/ui/StaggerItem";
@@ -43,9 +42,6 @@ export default function Catalog() {
     <PageShell title="">
       <div className={styles.page}>
         <div className={styles.titleSection}>
-          <Badge variant="solid" icon={<TrendingUp size={12} />} className={styles.trendBadge}>
-            Top Quality Fabrics
-          </Badge>
           <h2 className={styles.mainTitle}>Collections</h2>
           <p className={styles.subtitle}>Select from our handpicked premium range</p>
         </div>

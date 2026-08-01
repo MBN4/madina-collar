@@ -6,6 +6,7 @@ import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import { FieldTextarea } from "../components/ui/FieldInput";
 import PageShell from "../components/PageShell";
+import SizeLabel from "../components/SizeLabel";
 import { useRequireAuth } from "../hooks/useRequireAuth";
 import { useAuthStore } from "../store/authStore";
 import { useCartStore } from "../store/cartStore";
@@ -200,8 +201,15 @@ export default function Checkout() {
                         </p>
                         <p className={styles.itemMeta}>
                           {item.category} • {item.color}{" "}
-                          {item.width ? `• W:${item.width}` : ""} • Size:{" "}
-                          {item.size}
+                          {item.width ? (
+                            <>
+                              • W:<SizeLabel value={item.width} />{" "}
+                            </>
+                          ) : (
+                            ""
+                          )}
+                          • Size:{" "}
+                          <SizeLabel value={item.size} />
                         </p>
                       </div>
                       <div className={styles.itemPricing}>

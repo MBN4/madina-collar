@@ -5,6 +5,7 @@ import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import Loader from "../components/ui/Loader";
 import StaggerItem from "../components/ui/StaggerItem";
+import SizeLabel from "../components/SizeLabel";
 import { useRequireAuth } from "../hooks/useRequireAuth";
 import styles from "../styles/Orders.module.css";
 import { Order } from "../types";
@@ -84,8 +85,15 @@ export default function Orders() {
                         </p>
                         <p className={styles.orderItemDetail}>
                           {item.category} • {item.color}
-                          {item.width ? ` • Width: ${item.width}` : ""} • Size:{" "}
-                          {item.size}
+                          {item.width ? (
+                            <>
+                              {" "}
+                              • Width: <SizeLabel value={item.width} />
+                            </>
+                          ) : (
+                            ""
+                          )}{" "}
+                          • Size: <SizeLabel value={item.size} />
                         </p>
                         <p className={styles.orderItemPrice}>
                           {item.quantity} × Rs {item.price_at_purchase}
