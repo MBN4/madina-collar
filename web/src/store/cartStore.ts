@@ -22,7 +22,7 @@ export const useCartStore = create<
         set((state) => {
           const currentConfigCart = state.cart[cartKey] || {};
           const currentQty = currentConfigCart[size] || 0;
-          const newQty = Math.min(100, Math.max(0, currentQty + delta));
+          const newQty = Math.min(9999, Math.max(0, currentQty + delta));
           const updatedConfig = { ...currentConfigCart, [size]: newQty };
           if (newQty === 0) delete updatedConfig[size];
           const newCart = { ...state.cart };
