@@ -13,6 +13,7 @@ import { useCartStore } from "../store/cartStore";
 import styles from "../styles/Checkout.module.css";
 import { Quality } from "../types";
 import api from "../utils/api";
+import { sizeToNumber } from "../utils/sizeOrder";
 
 type CartItem = {
   key: string;
@@ -85,7 +86,7 @@ export default function Checkout() {
         });
       });
     });
-    return items;
+    return items.sort((a, b) => sizeToNumber(a.size) - sizeToNumber(b.size));
   }, [cart, catalog]);
 
   const totalAmount = useMemo(

@@ -11,6 +11,7 @@ import styles from "../styles/Product.module.css";
 import { DEFAULT_QUALITY_THEME, QUALITY_THEMES } from "../styles/theme";
 import { ProductAttribute, Quality } from "../types";
 import api, { getImageUrl } from "../utils/api";
+import { sizeToNumber } from "../utils/sizeOrder";
 
 export default function Product() {
   const router = useRouter();
@@ -77,11 +78,7 @@ export default function Product() {
   const sizes = useMemo(() => {
     const raw =
       currentStyle?.ProductAttributes?.filter((a) => a.type === "size") || [];
-    return [...raw].sort((a, b) => {
-      const va = parseFloat(a.value.replace(/[^\d.-]/g, "")) || 0;
-      const vb = parseFloat(b.value.replace(/[^\d.-]/g, "")) || 0;
-      return va - vb;
-    });
+    return [...raw].sort((a, b) => sizeToNumber(a.value) - sizeToNumber(b.value));
   }, [currentStyle]);
 
   useEffect(() => {
@@ -155,12 +152,6 @@ export default function Product() {
     return colors.find((c) => c.id === activeId) || colors[0];
   };
 
-  const selectedSummaryParts = [
-    selectedType,
-    selectedCategory?.value,
-    selectedWidth?.value,
-  ].filter(Boolean) as string[];
-
   const handleAdjust = (sizeValue: string, color: ProductAttribute, delta: number) => {
     const cartKey = buildCartKey(color);
     if (!cartKey) return;
@@ -219,19 +210,6 @@ export default function Product() {
           </div>
 
           <div className={styles.detailsPanel}>
-            <div className={styles.selectionSummary}>
-              {selectedSummaryParts.length ? (
-                selectedSummaryParts.map((part, i) => (
-                  <span key={i}>
-                    {i > 0 ? " • " : ""}
-                    <SizeLabel value={part} />
-                  </span>
-                ))
-              ) : (
-                "Select a style to begin"
-              )}
-            </div>
-
             <div className={styles.sectionCard}>
               <div className={styles.sectionHeader}>
                 <h2>Choose Style</h2>
