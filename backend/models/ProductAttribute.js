@@ -8,7 +8,8 @@ const ProductAttribute = sequelize.define('ProductAttribute', {
   value: { type: DataTypes.STRING, allowNull: false },
   price: { type: DataTypes.INTEGER, defaultValue: 0 },
   in_stock: { type: DataTypes.BOOLEAN, defaultValue: true },
-  hex_code: { type: DataTypes.STRING, allowNull: true }
+  hex_code: { type: DataTypes.STRING, allowNull: true },
+  sortOrder: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 }
 }, { timestamps: true });
 
 export default ProductAttribute;

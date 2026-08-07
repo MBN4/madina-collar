@@ -118,16 +118,56 @@ router.put('/orders/:id/status', auth, adminAuth, async (req, res) => {
 
 router.get('/qualities', async (req, res) => {
   try {
-    const qualities = await Quality.findAll({ 
-      include: [{ 
-        model: Style, 
-        include: [ProductAttribute, PriceMatrix] 
-      }], 
-      order: [['id', 'ASC']] 
+    const qualities = await Quality.findAll({
+      include: [{
+        model: Style,
+        include: [ProductAttribute, PriceMatrix]
+      }],
+      order: [
+        ['sortOrder', 'ASC'],
+        ['id', 'ASC'],
+        [Style, 'sortOrder', 'ASC'],
+        [Style, 'id', 'ASC'],
+        [Style, ProductAttribute, 'sortOrder', 'ASC'],
+        [Style, ProductAttribute, 'id', 'ASC'],
+      ]
     });
     res.json(qualities);
   } catch (err) {
     res.status(500).send('Error');
+  }
+});
+
+const REORDER_MODEL_BY_ENTITY_TYPE = {
+  quality: Quality,
+  style: Style,
+  attribute: ProductAttribute,
+};
+
+router.put('/reorder', auth, adminAuth, async (req, res) => {
+  if (!isMaster(req)) return res.status(403).json({ msg: 'Forbidden' });
+  const { entityType, items } = req.body;
+  const Model = REORDER_MODEL_BY_ENTITY_TYPE[entityType];
+  if (!Model) return res.status(400).json({ msg: 'Invalid entityType' });
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ msg: 'items must be a non-empty array' });
+  }
+
+  const t = await sequelize.transaction();
+  try {
+    for (const item of items) {
+      if (item == null || item.id == null) continue;
+      await Model.update(
+        { sortOrder: Number(item.sortOrder) || 0 },
+        { where: { id: item.id }, transaction: t },
+      );
+    }
+    await t.commit();
+    res.json({ msg: 'Success' });
+  } catch (err) {
+    await t.rollback();
+    console.error('reorder failed:', err);
+    res.status(500).json({ msg: 'Reorder failed' });
   }
 });
 

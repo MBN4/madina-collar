@@ -10,7 +10,6 @@ import { useRequireAuth } from "../hooks/useRequireAuth";
 import styles from "../styles/Orders.module.css";
 import { Order } from "../types";
 import api from "../utils/api";
-import { sizeToNumber } from "../utils/sizeOrder";
 
 export default function Orders() {
   const router = useRouter();
@@ -79,9 +78,7 @@ export default function Orders() {
                   </div>
 
                   <div className={styles.orderItems}>
-                    {[...order.items]
-                      .sort((a, b) => sizeToNumber(a.size) - sizeToNumber(b.size))
-                      .map((item) => (
+                    {order.items.map((item) => (
                       <div key={item.id} className={styles.orderItem}>
                         <p className={styles.orderItemTitle}>
                           {item.quality} — {item.style}

@@ -27,6 +27,11 @@ const Quality = sequelize.define('Quality', {
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
+  },
+  sortOrder: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
   }
 }, {
   timestamps: true,

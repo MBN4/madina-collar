@@ -72,14 +72,7 @@ const SizeSelectionScreen = ({ route, navigation }) => {
   const colors = useMemo(() => currentStyle?.ProductAttributes?.filter(a => a.type === 'color') || [], [currentStyle]);
   const widths = useMemo(() => currentStyle?.ProductAttributes?.filter(a => a.type === 'width') || [], [currentStyle]);
   
-  const sizes = useMemo(() => {
-    const rawSizes = currentStyle?.ProductAttributes?.filter(a => a.type === 'size') || [];
-    return rawSizes.sort((a, b) => {
-      const valA = parseFloat(a.value.replace(/[^\d.-]/g, '')) || 0;
-      const valB = parseFloat(b.value.replace(/[^\d.-]/g, '')) || 0;
-      return valA - valB;
-    });
-  }, [currentStyle]);
+  const sizes = useMemo(() => currentStyle?.ProductAttributes?.filter(a => a.type === 'size') || [], [currentStyle]);
 
   useEffect(() => {
     if (selectedType && currentStyle) {

@@ -11,7 +11,6 @@ import styles from "../styles/Product.module.css";
 import { DEFAULT_QUALITY_THEME, QUALITY_THEMES } from "../styles/theme";
 import { ProductAttribute, Quality } from "../types";
 import api, { getImageUrl } from "../utils/api";
-import { sizeToNumber } from "../utils/sizeOrder";
 
 export default function Product() {
   const router = useRouter();
@@ -75,11 +74,11 @@ export default function Product() {
       currentStyle?.ProductAttributes?.filter((a) => a.type === "width") || [],
     [currentStyle],
   );
-  const sizes = useMemo(() => {
-    const raw =
-      currentStyle?.ProductAttributes?.filter((a) => a.type === "size") || [];
-    return [...raw].sort((a, b) => sizeToNumber(a.value) - sizeToNumber(b.value));
-  }, [currentStyle]);
+  const sizes = useMemo(
+    () =>
+      currentStyle?.ProductAttributes?.filter((a) => a.type === "size") || [],
+    [currentStyle],
+  );
 
   useEffect(() => {
     if (!selectedType || !currentStyle) return;
